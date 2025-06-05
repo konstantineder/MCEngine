@@ -6,10 +6,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from itertools import product as cartesian_product
 from controller.controller import SimulationController
-from models.vasicek import *
-from metrics.pv_metric import *
-from products.european_option_bond import *
-from engine.engine import *
+from models.vasicek import VasicekModel
+from metrics.pv_metric import PVMetric
+from products.european_option_bond import EuropeanBondOption, OptionType
+from engine.engine import SimulationScheme
 from maths.monomials import Polynomials
 
 

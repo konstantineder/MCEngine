@@ -6,10 +6,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from itertools import product as cartesian_product
 from controller.controller import SimulationController
-from models.black_scholes import *
-from metrics.pv_metric import *
-from products.european_option_equity import *
-from engine.engine import *
+from models.black_scholes import BSModel
+from metrics.pv_metric import PVMetric
+from products.european_option_equity import EuropeanOption, OptionType
+from engine.engine import SimulationScheme
 
 
 if __name__ == "__main__":
