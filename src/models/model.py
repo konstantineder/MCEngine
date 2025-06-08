@@ -4,6 +4,7 @@ from common.packages import *
 class Model:
     def __init__(self, calibration_date):
         self.calibration_date = torch.tensor([calibration_date], dtype=torch.float64,device=device)
+        self.num_assets=1
     
     def get_model_params(self):
         return []

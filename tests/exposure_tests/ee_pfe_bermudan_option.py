@@ -20,12 +20,12 @@ if __name__ == "__main__":
     # Setup model and product
 
 
-    model = BSModel(calibration_date=0.0, spot=100, rate=0.05, sigma=0.5)
+    model = BlackScholesModel(calibration_date=0.0, spot=100, rate=0.05, sigma=0.5)
     exercise_dates = [0.5,1.0,1.5,2.0,2.5,3.0]
     maturity = 3.0
     strike = 100.0
 
-    product = BermudanOption(maturity=maturity, exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
+    product = BermudanOption(exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
 
     portfolio=[product]
 

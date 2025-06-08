@@ -6,9 +6,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from itertools import product as cartesian_product
 from controller.controller import SimulationController
-from models.black_scholes import BSModel
+from models.black_scholes import BlackScholesModel
 from metrics.pv_metric import PVMetric
-from products.bermudan_option import BermudanOption, OptionType
+from products.bermudan_option import AmericanOption, OptionType
 from engine.engine import SimulationScheme
 
 
@@ -38,9 +38,8 @@ if __name__ == "__main__":
         results = []
 
         for T, S0, sigma, rate, strike in param_grid:
-            model = BSModel(0, S0, rate, sigma)
-            exercise_dates=[0.25,0.5,0.75,1.0]
-            product = BermudanOption(T,exercise_dates,strike,OptionType.CALL)
+            model = BlackScholesModel(0, S0, rate, sigma)
+            product = AmericanOption(T,10,strike,OptionType.PUT)
 
             portfolio = [product]
             metrics=[PVMetric()]
@@ -66,11 +65,11 @@ if __name__ == "__main__":
         return pd.DataFrame(results)
     
     # Define parameter grid
-    S0_vals = np.linspace(10, 300, 50)
+    S0_vals = np.linspace(10, 200, 20)
     sigma_vals = [0.2]
     r_vals = [0.05]
     strikes = [100]
-    T_vals = np.linspace(0.25, 2.0, 50)
+    T_vals = np.linspace(0.25, 1.0, 20)
 
     # Cartesian product of all combinations
     # defining the parameter grid
@@ -87,10 +86,9 @@ if __name__ == "__main__":
     
     def compute_pv_analytically_wrapper(args):
         spot, rate, vola = args
-        model_deriv = BSModel(0, spot, rate, vola)
+        model_deriv = BlackScholesModel(0, spot, rate, vola)
 
-        exercise_dates=[0.25,0.5,0.75,1.0]
-        product_deriv = BermudanOption(T,exercise_dates,strike,OptionType.CALL)
+        product_deriv = AmericanOption(1.0,10,100,OptionType.PUT)
 
         portfolio = [product_deriv]
         metrics=[PVMetric()]
@@ -99,7 +97,7 @@ if __name__ == "__main__":
         sc=SimulationController(portfolio, model_deriv, metrics, num_paths_main_sim, num_paths_pre_sim, steps, SimulationScheme.ANALYTICAL, True)
 
         sim_results=sc.run_simulation()
-        pv=sim_results.get_results(0,0)
+        pv=sim_results.get_results(0,0)[0]
         
         return pv
 
@@ -107,14 +105,12 @@ if __name__ == "__main__":
     X = df_results_spot_maturity["time to maturity"].astype(float).to_numpy()
     Y = df_results_spot_maturity["spot"].astype(float).to_numpy()
     Zs = {
-        "Analytical Price": df_results_spot_maturity["price"].astype(float).to_numpy(),
         "Simulation": df_results_spot_maturity["price (sim)"].astype(float).to_numpy(),
     }
-    T = df_results_spot_maturity["rel. error (sim)"].astype(float).to_numpy()
 
 
     # Set fixed parameters for Delta and Vega plotting
-    T_fixed = 2.0
+    T_fixed = 1.0
     sigma_fixed = 0.2
 
     df_delta_vega = df_results_spot_maturity[np.isclose(df_results_spot_maturity["time to maturity"], T_fixed)]
@@ -141,6 +137,7 @@ if __name__ == "__main__":
 
     # Plot Delta and Vega below, comparing analytical and simulated values
     df_delta_vega = df_results_spot_maturity[np.isclose(df_results_spot_maturity["time to maturity"], T_fixed)]
+
 
     # Delta Plot
     ax_delta = fig.add_subplot(2, 2, 3)

@@ -6,7 +6,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from itertools import product as cartesian_product
 from controller.controller import SimulationController
-from models.black_scholes import BSModel
+from models.black_scholes import BlackScholesModel
 from metrics.pv_metric import PVMetric
 from products.barrier_option import BarrierOption, BarrierOptionType, OptionType
 from engine.engine import SimulationScheme
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         results = []
 
         for T, S0, sigma, rate, strike in param_grid:
-            model = BSModel(0, S0, rate, sigma)
+            model = BlackScholesModel(0, S0, rate, sigma)
             product = BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0.0,T,OptionType.CALL,10)
 
             portfolio = [product]
@@ -89,7 +89,7 @@ if __name__ == "__main__":
     
     def compute_pv_analytically_wrapper(args):
         spot, rate, vola = args
-        model_deriv = BSModel(0, spot, rate, vola)
+        model_deriv = BlackScholesModel(0, spot, rate, vola)
         product_deriv = BarrierOption(100, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,10)
         
         return float(product_deriv.compute_pv_analytically(model_deriv))

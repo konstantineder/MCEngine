@@ -83,7 +83,7 @@ if __name__ == "__main__":
                 secondgrad = torch.autograd.grad(grad, params,retain_graph=True)
                 secondgrads.append(secondgrad)
             
-            model = BSModel(0, S0, rate, sigma)
+            model = BlackScholesModel(0, S0, rate, sigma)
             #product = BinaryOption(T,strike,10,OptionType.CALL)
             product = EuropeanOption(T,strike,OptionType.CALL)
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
     
     # def compute_pv_analytically_wrapper(args):
     #     spot, rate, vola = args
-    #     model_deriv = BSModel(0, spot, rate, vola)
+    #     model_deriv = BlackScholesModel(0, spot, rate, vola)
     #     #product_deriv = BarrierOption(100, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,True,10)
     #     product_deriv = EuropeanOption(2.0,100,OptionType.CALL)
     #     #product_deriv=BinaryOption(2.0,100,10,OptionType.CALL)

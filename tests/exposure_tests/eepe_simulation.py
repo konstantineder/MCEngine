@@ -23,7 +23,7 @@ if __name__ == "__main__":
     print(f"Using device: {device}")
 
 
-    # model = BSModel(calibration_date=0, spot=100, rate=0.05, sigma=0.2)
+    # model = BlackScholesModel(calibration_date=0, spot=100, rate=0.05, sigma=0.2)
     # product = EuropeanOption(maturity=1.0, strike=100, option_type=OptionType.CALL)
 
     # engine = MonteCarloEngine(model, begin_date=0,end_date=1,num_paths=10000, num_steps=50)
@@ -57,7 +57,7 @@ if __name__ == "__main__":
         results = []
 
         for T, S0, sigma, rate, strike in param_grid:
-            model = BSModel(0, S0, rate, sigma)
+            model = BlackScholesModel(0, S0, rate, sigma)
             #product = BinaryOption(T,strike,10,OptionType.CALL)
             product = EuropeanOption(T,strike,OptionType.CALL)
             #portfolio=[BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0,T,OptionType.CALL,True,10)]
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     
     def compute_pv_analytically_wrapper(args):
         spot, rate, vola = args
-        model_deriv = BSModel(0, spot, rate, vola)
+        model_deriv = BlackScholesModel(0, spot, rate, vola)
         #product_deriv = BarrierOption(100, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,True,10)
         product_deriv = EuropeanOption(2.0,100,OptionType.CALL)
         #product_deriv=BinaryOption(2.0,100,10,OptionType.CALL)

@@ -4,9 +4,8 @@ import numpy as np
 from collections import defaultdict
 
 class BermudanOption:
-    def __init__(self, maturity, exercise_dates, strike, option_type):
+    def __init__(self, exercise_dates, strike, option_type):
         super().__init__()
-        self.maturity = torch.tensor([maturity], dtype=torch.float64, device=device)
         self.strike = torch.tensor([strike], dtype=torch.float64, device=device)
         self.option_type = option_type
         self.product_timeline = torch.tensor(exercise_dates, dtype=torch.float64, device=device)
@@ -71,7 +70,7 @@ class BermudanOption:
     
 class AmericanOption(BermudanOption):
     def __init__(self, maturity, num_exercise_dates, strike, option_type):
-        super().__init__(maturity=maturity,
-                         exercise_dates=np.linspace(0.,maturity,num_exercise_dates),
+        exercise_dates=np.linspace(0.,maturity,num_exercise_dates) if num_exercise_dates>1 else [maturity]
+        super().__init__(exercise_dates=exercise_dates,
                          strike=strike,
                          option_type=option_type)

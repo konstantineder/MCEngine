@@ -72,11 +72,11 @@ class SimulationController:
         self.numeraire_requests = {idx: ModelRequest(ModelRequestType.NUMERAIRE, t) for idx, t in enumerate(exposure_timeline)}
         self.spot_requests = {idx: ModelRequest(ModelRequestType.SPOT) for idx in range(len(exposure_timeline))}
 
-        all_times = list(sorted(set(
-            t for prod in self.portfolio for t in prod.modeling_timeline
-        ).union(exposure_timeline)))
+        prod_times = {float(t.item()) for prod in self.portfolio for t in prod.modeling_timeline}
+        exposure_times = {float(t.item()) for t in exposure_timeline}
+        all_times = sorted(prod_times.union(exposure_times))
+        self.simulation_timeline = torch.tensor(all_times, dtype=torch.float64)
 
-        self.simulation_timeline = torch.tensor(sorted(all_times), dtype=torch.float64) 
 
         self.requires_regression = any(len(prod.regression_timeline) > 0 for prod in self.portfolio) or len(exposure_timeline) > 0
 
@@ -156,7 +156,7 @@ class SimulationController:
                         current_state = torch.full((num_paths,), state, dtype=torch.long, device=device)
                         for idx in range(t_next_idx, len(product.product_timeline)):
                             current_state, cfs = product.compute_normalized_cashflows(
-                                idx, self.model.get_model_params(), resolved_requests, self.regression_monomials, current_state
+                                idx, self.model, resolved_requests, self.regression_monomials, current_state
                             )
                             total_cfs[:, state] += cfs
 
@@ -202,14 +202,14 @@ class SimulationController:
 
         if len(self.exposure_timeline)==0 and any_pv:
             while t_start < len(product.product_timeline):
-                    prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model.get_model_params(), resolved_requests, self.regression_monomials, prod_state)
+                    prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model, resolved_requests, self.regression_monomials, prod_state)
                     cfs+=new_cfs
                     t_start+=1
 
         else:
             for i, t in enumerate(self.exposure_timeline):
                 while t_start < len(product.product_timeline) and product.product_timeline[t_start] <= t:
-                    prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model.get_model_params(), resolved_requests, self.regression_monomials,prod_state)
+                    prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model, resolved_requests, self.regression_monomials,prod_state)
                     cfs+=new_cfs
                     t_start+=1
 
@@ -227,7 +227,7 @@ class SimulationController:
 
                 if any_pv:
                     while t_start < len(product.timeline):
-                        prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model.get_model_params(), resolved_requests, self.regression_monomials, prod_state)
+                        prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model, resolved_requests, self.regression_monomials, prod_state)
                         cfs+=new_cfs
                         t_start+=1
 

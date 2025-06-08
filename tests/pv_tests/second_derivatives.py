@@ -7,7 +7,7 @@ from IPython.display import display
 import matplotlib.pyplot as plt
 from itertools import product as cartesian_product
 from controller.controller import SimulationController
-from models.black_scholes import BSModel
+from models.black_scholes import BlackScholesModel
 from metrics.pv_metric import PVMetric
 from products.european_option_equity import EuropeanOption, OptionType
 from engine.engine import SimulationScheme
@@ -63,7 +63,7 @@ if __name__ == "__main__":
         results = []
 
         for T, S0, sigma, rate, strike in param_grid:
-            model = BSModel(0, S0, rate, sigma)
+            model = BlackScholesModel(0, S0, rate, sigma)
             #product = BinaryOption(T,strike,10,OptionType.CALL)
             product = EuropeanOption(T,strike,OptionType.CALL)
             #portfolio=[BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0,T,OptionType.CALL,True,10)]
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     
     def compute_pv_analytically_wrapper(args):
         spot, rate, vola = args
-        model_deriv = BSModel(0, spot, rate, vola)
+        model_deriv = BlackScholesModel(0, spot, rate, vola)
         #product_deriv = BarrierOption(100, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,True,10)
         product_deriv = EuropeanOption(2.0,100,OptionType.CALL)
         #product_deriv=BinaryOption(2.0,100,10,OptionType.CALL)

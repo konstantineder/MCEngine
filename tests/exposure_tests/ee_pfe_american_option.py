@@ -20,8 +20,8 @@ if __name__ == "__main__":
     # Setup model and product
 
 
-    model = BSModel(calibration_date=0.0, spot=100, rate=0.05, sigma=0.5)
-    num_exercise_dates=20
+    model = BlackScholesModel(calibration_date=0.0, spot=100, rate=0.05, sigma=0.5)
+    num_exercise_dates=1
     maturity = 3.0
     strike = 100.0
 

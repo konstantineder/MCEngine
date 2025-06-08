@@ -7,7 +7,7 @@ import torch.optim as optim
 import random
 from collections import deque
 from controller.controller import SimulationController
-from models.black_scholes import BSModel
+from models.black_scholes import BlackScholesModel
 from metrics.pv_metric import PVMetric  
 from products.european_option_equity import EuropeanOption, OptionType
 from products.bermudan_option import BermudanOption
@@ -175,7 +175,7 @@ pv = compute_present_value(q_net, num_paths=10000)
 print(f"Estimated Present Value of the American Option: {pv:.4f}")
 
 
-model = BSModel(0, S0, r, sigma)
+model = BlackScholesModel(0, S0, r, sigma)
 #product = BinaryOption(T,strike,10,OptionType.CALL)
 bo = BermudanOption(1.0,np.linspace(0.0, 1.0, 5)[1:],K,OptionType.PUT)
 eo = EuropeanOption(1.0,K,OptionType.PUT)

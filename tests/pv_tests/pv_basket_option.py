@@ -3,13 +3,12 @@ from context import *
 import torch
 import numpy as np
 import pandas as pd
-from IPython.display import display
 import matplotlib.pyplot as plt
 from itertools import product as cartesian_product
 from controller.controller import SimulationController
-from models.black_scholes import BlackScholesModel
+from models.black_scholes_multi import BlackScholesMulti
 from metrics.pv_metric import PVMetric
-from products.binary_option import BinaryOption, OptionType
+from products.basket_option import BasketOption, OptionType,BasketOptionType
 from engine.engine import SimulationScheme
 
 
@@ -34,40 +33,57 @@ if __name__ == "__main__":
         if denom < eps:
             return 0.0
         return 2 * abs(x - y) / denom
+    
+    def compute_sigmas_and_correlation_from_cholesky(L):
+        # Step 1: Compute covariance matrix Σ = L @ L.T
+        cov_matrix = L @ L.T
 
-    def compute_prices_for_grid(param_grid, num_paths, steps):
-        results = []
+        # Step 2: Extract sigmas from diagonal (standard deviations)
+        sigmas = np.sqrt(np.diag(cov_matrix))
 
-        for T, S0, sigma, rate, strike in param_grid:
-            model = BlackScholesModel(0, S0, rate, sigma)
-            product = BinaryOption(T,strike,10,OptionType.CALL)
-            #portfolio=[BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0,T,OptionType.CALL,True,10)]
-            portfolio = [product]
-            metrics=[PVMetric()]
-            # Compute analytical price (if available)
-            price_analytical = product.compute_pv_analytically(model)
+        # Step 3: Compute correlation matrix: ρ_ij = Σ_ij / (σ_i * σ_j)
+        denom = np.outer(sigmas, sigmas)
+        correlation_matrix = cov_matrix / denom
 
-            sc=SimulationController(portfolio, model, metrics, num_paths, 0, steps, SimulationScheme.ANALYTICAL, True)
+        return sigmas, correlation_matrix
 
-            sim_results=sc.run_simulation()
-            price_sim=sim_results.get_results(0,0)
-            greeks=sim_results.get_derivatives(0,0)[0]
-            error_sim = rel_err(price_sim[0], float(price_analytical[0]))
 
-            results.append({
-                "spot": S0,
-                "vola": sigma,
-                "rate": rate,
-                "time to maturity": T,
-                "price": price_analytical,
-                "price (sim)": price_sim[0],
-                "rel. error (sim)": error_sim,
-                "Delta": greeks[0],
-                "Vega": greeks[1],
-                "Rho": greeks[2],
-            })
+    # def compute_prices_for_grid(param_grid,num_assets,correlation_matrix, num_paths, steps):
+    #     results = []
 
-        return pd.DataFrame(results)
+    #     for T, S0, sigma, rate, strike in param_grid:
+    #         spots=[S0,...,S0] #num_assets
+    #         sigmas=[]
+    #         model = BlackScholesMulti(0.0,rate,spots,sigmas,correlation_matrix,OptionType.CALL,BasketOptionType.CLASSIC)
+    #         #product = BinaryOption(T,strike,10,OptionType.CALL)
+    #         product = EuropeanOption(T,strike,OptionType.CALL)
+    #         #portfolio=[BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0,T,OptionType.CALL,True,10)]
+    #         portfolio = [product]
+    #         metrics=[PVMetric()]
+    #         # Compute analytical price (if available)
+    #         price_analytical = product.compute_pv_analytically(model)
+
+    #         sc=SimulationController(portfolio, model, metrics, num_paths, 0, steps, SimulationScheme.ANALYTICAL, True)
+
+    #         sim_results=sc.run_simulation()
+    #         price_sim=sim_results.get_results(0,0)
+    #         greeks=sim_results.get_derivatives(0,0)[0]
+    #         error_sim = rel_err(price_sim[0], float(price_analytical[0]))
+
+    #         results.append({
+    #             "spot": S0,
+    #             "vola": sigma,
+    #             "rate": rate,
+    #             "time to maturity": T,
+    #             "price": price_analytical,
+    #             "price (sim)": price_sim[0],
+    #             "rel. error (sim)": error_sim,
+    #             "Delta": greeks[0],
+    #             "Vega": greeks[1],
+    #             "Rho": greeks[2],
+    #         })
+
+    #     return pd.DataFrame(results)
     
     # Define parameter grid
     S0_vals = np.linspace(10, 300, 50)
@@ -76,23 +92,50 @@ if __name__ == "__main__":
     strikes = [100]
     T_vals = np.linspace(0.25, 2.0, 50)
 
+    num_assets=4
+
+    correlation_matrix = np.array([
+        [1.0, 0.5, 0.5, 0.5],
+        [0.5, 1.0, 0.5, 0.5],
+        [0.5, 0.5, 1.0, 0.5],
+        [0.5, 0.5, 0.5, 1.0]
+    ])
+
+    #sigmas, corr = compute_sigmas_and_correlation_from_cholesky(L)
+    spots=np.array([100,100,100,100])
+    sigmas=np.array([0.4,0.4,0.4,0.4])
+    rate=0.0
+    model=BlackScholesMulti(0.0,rate,spots,sigmas,correlation_matrix)
+    weights=np.array([0.25,0.25,0.25,0.25])
+    basket=BasketOption(1.0,weights,100,OptionType.CALL,BasketOptionType.ARITHMETIC,True)
+    basket_geo=BasketOption(1.0,weights,100,OptionType.CALL,BasketOptionType.GEOMETRIC)
+
+    num_paths = 1000000
+    steps = 1
+
+    sc=SimulationController([basket,basket_geo], model, [PVMetric()], num_paths, 0, steps, SimulationScheme.ANALYTICAL, False)
+    sim_results=sc.run_simulation()
+    price_basket=sim_results.get_results(0,0)
+    price_geo=sim_results.get_results(1,0)
+    print(price_basket[0])
+    print(price_geo[0])
+    print(basket_geo.compute_pv_analytically(model).item())
+
     # Cartesian product of all combinations
     # defining the parameter grid
     param_grid = list(cartesian_product(T_vals,S0_vals, sigma_vals, r_vals, strikes))
-
-    num_paths = 100000
-    steps = 1
     
     # Simulate option prices and store in data frame.
     # Since only spot price and time to maturity are varied
     # the rate and volatility will be filtered out
-    df_results_spot_maturity=compute_prices_for_grid(param_grid,num_paths,steps).drop(columns=["rate", "vola"])
+    df_results_spot_maturity=compute_prices_for_grid(param_grid,num_assets,num_paths,steps).drop(columns=["rate", "vola"])
     
     def compute_pv_analytically_wrapper(args):
         spot, rate, vola = args
         model_deriv = BlackScholesModel(0, spot, rate, vola)
         #product_deriv = BarrierOption(100, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,True,10)
-        product_deriv = BinaryOption(2.0,100,10,OptionType.CALL)
+        product_deriv = EuropeanOption(2.0,100,OptionType.CALL)
+        #product_deriv=BinaryOption(2.0,100,10,OptionType.CALL)
         
         return float(product_deriv.compute_pv_analytically(model_deriv))
 

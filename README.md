@@ -25,10 +25,12 @@ A flexible, extensible Monte Carlo simulation engine for pricing and risk analyt
   - Bermudan Options
   - American Options
   - Barrier Options
+  - Basket Option
   - Interest Rate Swaps
 
 - **Models**
   - **Black-Scholes Model**
+  - **Black-Scholes Multi-asset Model**
   - Stochastic interest rate models:
     - **Vasicek**
     - **Hull-White**
@@ -37,7 +39,6 @@ A flexible, extensible Monte Carlo simulation engine for pricing and risk analyt
 
 - [ ] Extend the **request interface** to support composite requests
 - [ ] Implement valuation of **Bermudan Swaptions**
-- [ ] Add **multi-asset Black-Scholes model** and incorportate differentiable Cholesky-decomposition
 - [ ] Add **Merton** jump-diffusion model
 - [ ] Integrate **Jarrow–Turnbull (JWT)** credit risk model
 - [ ] Incorporate **machine learning-based valuation techniques**

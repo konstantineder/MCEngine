@@ -1,8 +1,8 @@
 from models.model import *
-from request_interface.request_interface import *
+from request_interface.request_interface import ModelRequestType
 
 # AAD-enabled Black-Scholes model
-class BSModel(Model):
+class BlackScholesModel(Model):
     def __init__(self, calibration_date, spot, rate, sigma):
         super().__init__(calibration_date)
         self.spot = torch.tensor([spot], dtype=torch.float64, requires_grad=True, device=device)

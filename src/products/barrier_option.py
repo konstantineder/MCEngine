@@ -58,8 +58,8 @@ class BarrierOption(Product):
         if self.barrier_option_type == BarrierOptionType.DOWNANDIN:
             return torch.maximum(spots_at_maturity - self.strike, zero) * (1 - is_min_above_barrier) if self.option_type == OptionType.CALL else torch.maximum(self.strike - spots_at_maturity, zero) * (1 - is_min_above_barrier)
         
-    def compute_payoff_with_brownian_bridge(self, spots, model_params):
-        sigma = model_params[1]
+    def compute_payoff_with_brownian_bridge(self, spots, model):
+        sigma = model.sigma
         spots_at_maturity = spots[:,-1]
         max_spot = torch.max(spots, dim=1).values  # Max spot across each path
         min_spot = torch.min(spots, dim=1).values
@@ -102,11 +102,11 @@ class BarrierOption(Product):
         return payoff
 
             
-    def payoff(self, spots, model_params):
+    def payoff(self, spots, model):
             if self.use_brownian_bridge==True:
-                return self.compute_payoff_with_brownian_bridge(spots, model_params)
+                return self.compute_payoff_with_brownian_bridge(spots, model)
             else:
-                return self.compute_payoff_without_brownian_bridge(spots, model_params)
+                return self.compute_payoff_without_brownian_bridge(spots, model)
 
 
     def compute_pv_analytically(self, model):
@@ -146,9 +146,9 @@ class BarrierOption(Product):
     def get_initial_state(self, num_paths):
         return torch.full((num_paths,), 0, dtype=torch.long, device=device)
     
-    def compute_normalized_cashflows(self, time_idx, model_params, resolved_requests, regression_monomials=None, state=None):
+    def compute_normalized_cashflows(self, time_idx, model, resolved_requests, regression_monomials=None, state=None):
         spots=torch.stack([resolved_requests[self.spot_requests[idx].handle] for idx in range(len(self.modeling_timeline))], dim=1)
-        cfs = self.payoff(spots,model_params)
+        cfs = self.payoff(spots,model)
 
         numeraire=resolved_requests[self.numeraire_requests[len(self.product_timeline)-1].handle]
         normalized_cfs=cfs/numeraire

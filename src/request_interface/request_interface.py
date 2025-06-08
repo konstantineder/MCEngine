@@ -77,13 +77,12 @@ class RequestInterface:
 
     def resolve_requests(self, paths):
         """Resolve all requests once paths have been simulated."""
-        num_paths = paths.shape[0]
-        resolved_requests = torch.zeros((self.num_requests, num_paths), dtype=torch.float64, device=paths.device)
+        resolved_requests = {}
 
-        for t,reqs in self.all_requests.items():
+        for t, reqs in self.all_requests.items():
             for req in reqs:
-                state=paths[:,t]
-                result = self.model.resolve_request(req, state)  # Should return shape: [num_paths]
+                state = paths[:, t]
+                result = self.model.resolve_request(req, state)  # could be [num_paths] or [num_paths, num_assets]
                 resolved_requests[req.handle] = result
 
         return resolved_requests
