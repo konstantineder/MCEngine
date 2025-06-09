@@ -59,7 +59,7 @@ class BarrierOption(Product):
             return torch.maximum(spots_at_maturity - self.strike, zero) * (1 - is_min_above_barrier) if self.option_type == OptionType.CALL else torch.maximum(self.strike - spots_at_maturity, zero) * (1 - is_min_above_barrier)
         
     def compute_payoff_with_brownian_bridge(self, spots, model):
-        sigma = model.sigma
+        sigma = model.get_volatility()
         spots_at_maturity = spots[:,-1]
         max_spot = torch.max(spots, dim=1).values  # Max spot across each path
         min_spot = torch.min(spots, dim=1).values
@@ -110,9 +110,9 @@ class BarrierOption(Product):
 
 
     def compute_pv_analytically(self, model):
-            spot=model.spot
-            rate=model.rate
-            sigma=model.sigma
+            spot=model.get_spot()
+            rate=model.get_rate()
+            sigma=model.get_volatility()
 
             d1_spot_strike = (torch.log(spot / self.strike) + (rate + 0.5 * sigma**2) * self.maturity) / (sigma * torch.sqrt(self.maturity))
             d1_spot_barrier = (torch.log(spot / self.barrier) + (rate + 0.5 * sigma**2) * self.maturity) / (sigma * torch.sqrt(self.maturity))

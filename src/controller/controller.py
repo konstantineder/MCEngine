@@ -61,6 +61,9 @@ class SimulationController:
             prod.product_id=prod_id
             prod_id+=1
 
+        if differentiate:
+            self.model.requires_grad()
+
         self.regression_coeffs = [
             [  # For each time point in this product
                 [torch.zeros(3, device=device) for _ in range(prod.get_num_states())]
@@ -260,6 +263,7 @@ class SimulationController:
                             model_params,
                             retain_graph=True,
                             create_graph=True,
+                            allow_unused=True
                         )
                         grads_per_eval.append(_grads)
                     grads_per_metric.append(grads_per_eval)
@@ -277,6 +281,7 @@ class SimulationController:
                                     grad,
                                     model_params,
                                     retain_graph=True,
+                                    allow_unused=True
                                 )
                                 higher_grads_per_eval.append(_higher_grads)
                             evaluation_grads.append(higher_grads_per_eval)

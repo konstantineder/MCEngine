@@ -48,49 +48,47 @@ if __name__ == "__main__":
         return sigmas, correlation_matrix
 
 
-    # def compute_prices_for_grid(param_grid,num_assets,correlation_matrix, num_paths, steps):
-    #     results = []
+    def compute_prices_for_grid(param_grid,weights,correlation_matrix, num_paths, steps):
+        results = []
 
-    #     for T, S0, sigma, rate, strike in param_grid:
-    #         spots=[S0,...,S0] #num_assets
-    #         sigmas=[]
-    #         model = BlackScholesMulti(0.0,rate,spots,sigmas,correlation_matrix,OptionType.CALL,BasketOptionType.CLASSIC)
-    #         #product = BinaryOption(T,strike,10,OptionType.CALL)
-    #         product = EuropeanOption(T,strike,OptionType.CALL)
-    #         #portfolio=[BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0,T,OptionType.CALL,True,10)]
-    #         portfolio = [product]
-    #         metrics=[PVMetric()]
-    #         # Compute analytical price (if available)
-    #         price_analytical = product.compute_pv_analytically(model)
+        for T, S0, sigma, rate, strike in param_grid:
+            spots=[S0,S0,S0,S0]
+            sigmas=[sigma,sigma,sigma,sigma]
+            model = BlackScholesMulti(0.0,rate,spots,sigmas,correlation_matrix)
+            #product = BinaryOption(T,strike,10,OptionType.CALL)
+            bo_artm = BasketOption(T,weights,strike,OptionType.CALL,BasketOptionType.ARITHMETIC,True)
+            bo_geo = BasketOption(T,weights,strike,OptionType.CALL,BasketOptionType.GEOMETRIC)
+            #portfolio=[BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0,T,OptionType.CALL,True,10)]
+            portfolio = [bo_artm,bo_geo]
+            metrics=[PVMetric()]
 
-    #         sc=SimulationController(portfolio, model, metrics, num_paths, 0, steps, SimulationScheme.ANALYTICAL, True)
+            sc=SimulationController(portfolio, model, metrics, num_paths, 0, steps, SimulationScheme.ANALYTICAL, True)
 
-    #         sim_results=sc.run_simulation()
-    #         price_sim=sim_results.get_results(0,0)
-    #         greeks=sim_results.get_derivatives(0,0)[0]
-    #         error_sim = rel_err(price_sim[0], float(price_analytical[0]))
+            sim_results=sc.run_simulation()
+            price_artm=sim_results.get_results(0,0)
+            price_geo=sim_results.get_results(1,0)
+            greeks_geo=sim_results.get_derivatives(1,0)[0]
 
-    #         results.append({
-    #             "spot": S0,
-    #             "vola": sigma,
-    #             "rate": rate,
-    #             "time to maturity": T,
-    #             "price": price_analytical,
-    #             "price (sim)": price_sim[0],
-    #             "rel. error (sim)": error_sim,
-    #             "Delta": greeks[0],
-    #             "Vega": greeks[1],
-    #             "Rho": greeks[2],
-    #         })
+            results.append({
+                "spot": S0,
+                "vola": sigma,
+                "rate": rate,
+                "time to maturity": T,
+                "price (artm)": price_artm[0],
+                "price (geo)": price_geo[0],
+                "Delta": greeks_geo[0],
+                "Vega": greeks_geo[4],
+                "Rho": greeks_geo[8],
+            })
 
-    #     return pd.DataFrame(results)
+        return pd.DataFrame(results)
     
     # Define parameter grid
     S0_vals = np.linspace(10, 300, 50)
-    sigma_vals = [0.2]
-    r_vals = [0.05]
+    sigma_vals = [0.4]
+    r_vals = [0.0]
     strikes = [100]
-    T_vals = np.linspace(0.25, 2.0, 50)
+    T_vals = np.linspace(0.25, 1.0, 20)
 
     num_assets=4
 
@@ -102,15 +100,15 @@ if __name__ == "__main__":
     ])
 
     #sigmas, corr = compute_sigmas_and_correlation_from_cholesky(L)
-    spots=np.array([100,100,100,100])
-    sigmas=np.array([0.4,0.4,0.4,0.4])
+    spots=[100,100,100,100]
+    sigmas=[0.4,0.4,0.4,0.4]
     rate=0.0
     model=BlackScholesMulti(0.0,rate,spots,sigmas,correlation_matrix)
-    weights=np.array([0.25,0.25,0.25,0.25])
+    weights=[0.25,0.25,0.25,0.25]
     basket=BasketOption(1.0,weights,100,OptionType.CALL,BasketOptionType.ARITHMETIC,True)
     basket_geo=BasketOption(1.0,weights,100,OptionType.CALL,BasketOptionType.GEOMETRIC)
 
-    num_paths = 1000000
+    num_paths = 100000
     steps = 1
 
     sc=SimulationController([basket,basket_geo], model, [PVMetric()], num_paths, 0, steps, SimulationScheme.ANALYTICAL, False)
@@ -128,30 +126,30 @@ if __name__ == "__main__":
     # Simulate option prices and store in data frame.
     # Since only spot price and time to maturity are varied
     # the rate and volatility will be filtered out
-    df_results_spot_maturity=compute_prices_for_grid(param_grid,num_assets,num_paths,steps).drop(columns=["rate", "vola"])
+    df_results_spot_maturity=compute_prices_for_grid(param_grid,weights,correlation_matrix,num_paths,steps).drop(columns=["rate", "vola"])
     
     def compute_pv_analytically_wrapper(args):
         spot, rate, vola = args
-        model_deriv = BlackScholesModel(0, spot, rate, vola)
+        spots_deriv=np.array([spot,spot,spot,spot]) 
+        sigmas_deriv=np.array([vola,vola,vola,vola])
+        model_deriv = BlackScholesMulti(0.0,rate,spots_deriv,sigmas_deriv,correlation_matrix)
         #product_deriv = BarrierOption(100, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,True,10)
-        product_deriv = EuropeanOption(2.0,100,OptionType.CALL)
+        product_deriv = BasketOption(1.0,weights,100,OptionType.CALL,BasketOptionType.GEOMETRIC)
         #product_deriv=BinaryOption(2.0,100,10,OptionType.CALL)
         
-        return float(product_deriv.compute_pv_analytically(model_deriv))
+        return 0.25*float(product_deriv.compute_pv_analytically(model_deriv))
 
     # Define X, Y and Z data
     X = df_results_spot_maturity["time to maturity"].astype(float).to_numpy()
     Y = df_results_spot_maturity["spot"].astype(float).to_numpy()
     Zs = {
-        "Analytical Price": df_results_spot_maturity["price"].astype(float).to_numpy(),
-        "Simulation": df_results_spot_maturity["price (sim)"].astype(float).to_numpy(),
+        "Simulation (Arithmetic BasketOption)": df_results_spot_maturity["price (artm)"].astype(float).to_numpy(),
+        "Simulation (Geometric BasketOption)": df_results_spot_maturity["price (geo)"].astype(float).to_numpy(),
     }
-    T = df_results_spot_maturity["rel. error (sim)"].astype(float).to_numpy()
 
 
     # Set fixed parameters for Delta and Vega plotting
-    T_fixed = 2.0
-    sigma_fixed = 0.2
+    T_fixed = 1.0
 
     df_delta_vega = df_results_spot_maturity[np.isclose(df_results_spot_maturity["time to maturity"], T_fixed)]
 
@@ -182,7 +180,7 @@ if __name__ == "__main__":
     ax_delta = fig.add_subplot(2, 2, 3)
     ax_delta.plot(S0_vals, analytic_delta, marker='o', linestyle='-', label='Analytic Delta')
     ax_delta.plot(df_delta_vega["spot"], df_delta_vega["Delta"], marker='x', linestyle='--', label='Simulated Delta')
-    ax_delta.set_title(f"Delta vs Spot (T={T_fixed}, σ={sigma_fixed})")
+    ax_delta.set_title(f"Delta vs Spot (T={T_fixed})")
     ax_delta.set_xlabel("Spot Price (S₀)")
     ax_delta.set_ylabel("Delta")
     ax_delta.grid(True)
@@ -192,7 +190,7 @@ if __name__ == "__main__":
     ax_vega = fig.add_subplot(2, 2, 4)
     ax_vega.plot(S0_vals, analytic_vega, marker='o', linestyle='-', label='Analytic Vega')
     ax_vega.plot(df_delta_vega["spot"], df_delta_vega["Vega"], marker='x', linestyle='--', label='Simulated Vega')
-    ax_vega.set_title(f"Vega vs Spot (T={T_fixed}, σ={sigma_fixed})")
+    ax_vega.set_title(f"Vega vs Spot (T={T_fixed})")
     ax_vega.set_xlabel("Spot Price (S₀)")
     ax_vega.set_ylabel("Vega")
     ax_vega.grid(True)

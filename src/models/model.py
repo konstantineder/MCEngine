@@ -4,10 +4,15 @@ from common.packages import *
 class Model:
     def __init__(self, calibration_date):
         self.calibration_date = torch.tensor([calibration_date], dtype=torch.float64,device=device)
+        self.model_params=[]
         self.num_assets=1
     
     def get_model_params(self):
-        return []
+        return self.model_params
+    
+    def requires_grad(self):
+        for param in self.model_params:
+            param.requires_grad_(True)
 
     def generate_paths_analytically(self, timeline, num_paths, num_steps):
         return NotImplementedError(f"Method not implemented")

@@ -46,9 +46,9 @@ class EuropeanOption(Product):
         return state, normalized_cfs
 
     def compute_pv_analytically(self, model):
-        spot = model.spot
-        rate = model.rate
-        sigma = model.sigma
+        spot = model.get_spot()
+        rate = model.get_rate()
+        sigma = model.get_volatility()
 
         d1 = (torch.log(spot / self.strike) + (rate + 0.5 * sigma ** 2) * self.maturity) / (sigma * torch.sqrt(self.maturity))
         d2 = d1 - sigma * torch.sqrt(self.maturity)
@@ -61,9 +61,9 @@ class EuropeanOption(Product):
             return self.strike * torch.exp(-rate * self.maturity) * norm.cdf(-d2) - spot * norm.cdf(-d1)
         
     def compute_dVegadSigma_analytically(self, model):
-        spot = model.spot
-        rate = model.rate
-        sigma = model.sigma
+        spot = model.get_spot()
+        rate = model.get_rate()
+        sigma = model.get_volatility()
         T = self.maturity
 
         d1 = (torch.log(spot / self.strike) + (rate+0.5 * sigma ** 2) * T) / (sigma * torch.sqrt(T))
@@ -77,9 +77,9 @@ class EuropeanOption(Product):
         return vomma
     
     def compute_dDeltadSpot_analytically(self, model):
-        spot = model.spot
-        rate = model.rate
-        sigma = model.sigma
+        spot = model.get_spot()
+        rate = model.get_rate()
+        sigma = model.get_volatility()
         T = self.maturity
 
         d1 = (torch.log(spot / self.strike) + (rate+0.5 * sigma ** 2) * T) / (sigma * torch.sqrt(T))

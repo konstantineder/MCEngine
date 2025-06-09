@@ -47,9 +47,9 @@ class EuropeanBondOption(Product):
         return state, normalized_cfs
 
     def compute_pv_analytically(self, model):
-        a = model.a
-        rate = model.rate
-        sigma = model.sigma
+        a=model.get_mean_reversion_speed()
+        rate=model.get_rate()
+        sigma=model.get_volatility()
         calibration_date=model.calibration_date
 
         bond_price_at_exercise_date=model.compute_bond_price(calibration_date,self.maturity,rate)

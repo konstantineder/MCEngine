@@ -74,8 +74,9 @@ class BasketOption(Product):
     def compute_pv_analytically(self, model):
         # Assumes geometric basket under Black-Scholes
 
-        S = model.spots                  # Tensor of shape [n]
-        r = model.rate                   # Scalar tensor
+        S = model.get_spot()                  # Tensor of shape [n]
+        r = model.get_rate()                 # Scalar tensor
+        sigmas=model.get_volatility()
         T = self.maturity        # Scalar float
         K = self.strike          # Scalar float
         n = len(S)
@@ -94,7 +95,7 @@ class BasketOption(Product):
         sigma = torch.sqrt(basket_variance)       # Effective basket volatility
 
         # 4. Adjusted forward price F
-        sum_sigma_squared = torch.sum(model.sigmas ** 2)
+        sum_sigma_squared = torch.sum(sigmas ** 2)
         F = F_S_bar * torch.exp((r - 0.5 * sum_sigma_squared / n + 0.5 * sigma**2) * T)
 
         # 5. Black-Scholes d1, d2
