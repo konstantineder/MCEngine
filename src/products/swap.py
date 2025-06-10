@@ -72,7 +72,7 @@ class InterestRateSwap(Product):
         if observation_date==None:
             return CompositeRequest(self)
         else:
-            swap=InterestRateSwap(self.fixed_rate,observation_date.item(),self.enddate.item(),self.tenor.item())
+            swap=InterestRateSwap(self.fixed_rate,observation_date,self.enddate.item(),self.tenor.item())
             return CompositeRequest(swap)
 
     def get_value(self, resolved_atomic_requests):

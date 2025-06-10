@@ -27,7 +27,8 @@ class Equity(Product):
         return requests
     
     def get_composite_requests(self, observation_date=None):
-        return CompositeRequest(self)
+        equity=Equity('')
+        return CompositeRequest(equity)
 
     
     def get_value(self, resolved_atomic_requests):

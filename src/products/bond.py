@@ -5,13 +5,14 @@ from collections import defaultdict
 
 # AAD-compatible European option
 class Bond(Product):
-    def __init__(self, maturity):
+    def __init__(self, startdate, maturity):
         super().__init__()
         self.maturity = torch.tensor([maturity], dtype=torch.float64,device=device)
+        self.startdate = torch.tensor([startdate], dtype=torch.float64,device=device)
         self.composite_req_handle=None
 
         self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,self.maturity)}
-        self.composite_request={0: AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=None,time2=self.maturity)}
+        self.composite_request={0: AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=self.maturity)}
 
     def __eq__(self, other):
         return (isinstance(other, Bond) and 
@@ -40,9 +41,8 @@ class Bond(Product):
         if observation_date==None:
             return CompositeRequest(self)
         else:
-            for t, req in self.composite_request.items():
-                req.time1=observation_date
-            return CompositeRequest(self)
+            bond = Bond(observation_date,self.maturity.item())
+            return CompositeRequest(bond)
     
     def get_value(self, resolved_atomic_requests):
         return resolved_atomic_requests[self.composite_request[0].handle]
