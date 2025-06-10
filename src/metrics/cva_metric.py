@@ -6,7 +6,7 @@ class CVAMetric(Metric):
         self.exposure_timeline = torch.tensor(exposure_timeline, device=device)
         self.default_prob_curve = default_probability_curve  # Function or list
         self.recovery_rate = recovery_rate
-        #self.numeraire_requests = [ModelRequest(ModelRequestType.NUMERAIRE, t) for t in exposure_timeline]
+        #self.numeraire_requests = [AtomicRequest(RequestType.NUMERAIRE, t) for t in exposure_timeline]
 
 
     def evaluate_analytically(self, *args, **kwargs):

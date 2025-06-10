@@ -4,7 +4,7 @@ from operator import itemgetter
 import torch
 import numpy as np
 from engine.engine import MonteCarloEngine
-from request_interface.request_interface import RequestInterface, ModelRequest, ModelRequestType
+from request_interface.request_interface import RequestInterface, AtomicRequest, RequestType
 from metrics.metric import MetricType, Metric
 from enum import Enum, auto
 from collections import defaultdict
@@ -72,8 +72,8 @@ class SimulationController:
             for prod in portfolio
         ]
 
-        self.numeraire_requests = {idx: ModelRequest(ModelRequestType.NUMERAIRE, t) for idx, t in enumerate(exposure_timeline)}
-        self.spot_requests = {idx: ModelRequest(ModelRequestType.SPOT) for idx in range(len(exposure_timeline))}
+        self.numeraire_requests = {idx: AtomicRequest(RequestType.NUMERAIRE, t) for idx, t in enumerate(exposure_timeline)}
+        self.spot_requests = {idx: AtomicRequest(RequestType.SPOT) for idx in range(len(exposure_timeline))}
 
         prod_times = {float(t.item()) for prod in self.portfolio for t in prod.modeling_timeline}
         exposure_times = {float(t.item()) for t in exposure_timeline}

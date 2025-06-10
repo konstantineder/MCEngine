@@ -1,5 +1,5 @@
 from models.model import *
-from request_interface.request_interface import ModelRequestType
+from request_interface.request_interface import RequestType
 
 class BlackScholesMulti(Model):
     def __init__(self, calibration_date, rate, spots, volatilities, correlation_matrix):
@@ -86,25 +86,25 @@ class BlackScholesMulti(Model):
         return torch.stack(paths, dim=1)  # [num_paths, len(timeline)-1, num_assets]
 
     def resolve_request(self, req, state):
-        if req.request_type == ModelRequestType.SPOT:
+        if req.request_type == RequestType.SPOT:
             return state
 
-        elif req.request_type == ModelRequestType.DISCOUNT_FACTOR:
+        elif req.request_type == RequestType.DISCOUNT_FACTOR:
             t = req.time1
             rate=self.get_rate()
             return torch.exp(-rate * (t - self.calibration_date))
 
-        elif req.request_type == ModelRequestType.FORWARD_RATE:
+        elif req.request_type == RequestType.FORWARD_RATE:
             t1, t2 = req.time1, req.time2
             rate=self.get_rate()
             return torch.exp(rate * (t2 - t1))
 
-        elif req.request_type == ModelRequestType.LIBOR_RATE:
+        elif req.request_type == RequestType.LIBOR_RATE:
             t1, t2 = req.time1, req.time2
             rate=self.get_rate()
             return (torch.exp(rate* (t2 - t1)) - 1) / (t2 - t1)
 
-        elif req.request_type == ModelRequestType.NUMERAIRE:
+        elif req.request_type == RequestType.NUMERAIRE:
             t = req.time1
             rate=self.get_rate()
             return torch.exp(rate * (t - self.calibration_date))

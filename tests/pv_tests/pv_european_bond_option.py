@@ -8,7 +8,8 @@ from itertools import product as cartesian_product
 from controller.controller import SimulationController
 from models.vasicek import VasicekModel
 from metrics.pv_metric import PVMetric
-from products.european_option_bond import EuropeanBondOption, OptionType
+from products.european_option import EuropeanOption, OptionType
+from products.bond import Bond
 from engine.engine import SimulationScheme
 from maths.monomials import Polynomials
 
@@ -41,12 +42,13 @@ if __name__ == "__main__":
         for T, S0, sigma, rate, strike in param_grid:
             model = VasicekModel(calibration_date=0.,rate=rate,mean=0.05,mean_reversion_speed=0.02,volatility=sigma)
             #product = BinaryOption(T,strike,10,OptionType.CALL)
-            product = EuropeanBondOption(T,2.,strike,OptionType.CALL)
+            underlying=Bond(2.0)
+            product = EuropeanOption(underlying=underlying,exercise_date=T,strike=strike,option_type=OptionType.CALL)
             #portfolio=[BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0,T,OptionType.CALL,True,10)]
             portfolio = [product]
             metrics=[PVMetric()]
             # Compute analytical price (if available)
-            price_analytical = product.compute_pv_analytically(model)
+            price_analytical = product.compute_pv_bond_option_analytically(model)
             monomials=Polynomials(degree=3)
 
             sc=SimulationController(portfolio, model, metrics, num_paths, 0, steps, SimulationScheme.ANALYTICAL, True,[],monomials)
@@ -95,10 +97,11 @@ if __name__ == "__main__":
         #product = BinaryOption(T,strike,10,OptionType.CALL)
         
         #product_deriv = BarrierOption(100, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,True,10)
-        product_deriv = EuropeanBondOption(T_fixed,2,0.5,OptionType.CALL)
+        underlying=Bond(2.0)
+        product_deriv = EuropeanOption(underlying=underlying,exercise_date=T_fixed,strike=0.5,option_type=OptionType.CALL)
         #product_deriv=BinaryOption(2.0,100,10,OptionType.CALL)
         
-        return float(product_deriv.compute_pv_analytically(model_deriv))
+        return float(product_deriv.compute_pv_bond_option_analytically(model_deriv))
 
     # Define X, Y and Z data
     X = df_results_spot_maturity["time to maturity"].astype(float).to_numpy()

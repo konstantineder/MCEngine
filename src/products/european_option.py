@@ -1,30 +1,34 @@
 from products.product import *
 from math import pi
-from request_interface.request_interface import RequestType, AtomicRequest
+from request_interface.request_interface import RequestType, CompositeRequest, AtomicRequest
 from collections import defaultdict
 
 # AAD-compatible European option
 class EuropeanOption(Product):
-    def __init__(self, maturity, strike, option_type):
+    def __init__(self, underlying, exercise_date, strike, option_type):
         super().__init__()
-        self.maturity = torch.tensor([maturity], dtype=torch.float64,device=device)
+        self.exercise_date = torch.tensor([exercise_date], dtype=torch.float64,device=device)
         self.strike = torch.tensor([strike], dtype=torch.float64,device=device)
         self.option_type = option_type
-        self.product_timeline=torch.tensor([maturity], dtype=torch.float64,device=device)
+        self.product_timeline=torch.tensor([exercise_date], dtype=torch.float64,device=device)
         self.modeling_timeline=self.product_timeline
         self.regression_timeline=torch.tensor([], dtype=torch.float64,device=device)
+        self.underlying=underlying
 
-        self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,maturity)}
-        self.spot_requests={0: AtomicRequest(RequestType.SPOT)}
+        self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,exercise_date)}
+        self.underlying_request={0: underlying.get_composite_requests()}
     
     def get_requests(self):
         requests=defaultdict(set)
         for t, req in self.numeraire_requests.items():
             requests[t].add(req)
 
-        for t, req in self.spot_requests.items():
+        return requests
+    
+    def get_composite_requests(self):
+        requests=defaultdict(set)
+        for t, req in self.underlying_request.items():
             requests[t].add(req)
-
 
         return requests
 
@@ -37,10 +41,10 @@ class EuropeanOption(Product):
 
     
     def compute_normalized_cashflows(self, time_idx, model, resolved_requests, regression_monomials=None, state=None):
-        spots=resolved_requests[self.spot_requests[time_idx].handle]
+        spots=resolved_requests[1][self.underlying_request[time_idx].get_handle()]
         cfs = self.payoff(spots,model)
 
-        numeraire=resolved_requests[self.numeraire_requests[time_idx].handle]
+        numeraire=resolved_requests[0][self.numeraire_requests[time_idx].handle]
         normalized_cfs=cfs/numeraire
 
         return state, normalized_cfs
@@ -50,21 +54,43 @@ class EuropeanOption(Product):
         rate = model.get_rate()
         sigma = model.get_volatility()
 
-        d1 = (torch.log(spot / self.strike) + (rate + 0.5 * sigma ** 2) * self.maturity) / (sigma * torch.sqrt(self.maturity))
-        d2 = d1 - sigma * torch.sqrt(self.maturity)
+        d1 = (torch.log(spot / self.strike) + (rate + 0.5 * sigma ** 2) * self.exercise_date) / (sigma * torch.sqrt(self.exercise_date))
+        d2 = d1 - sigma * torch.sqrt(self.exercise_date)
 
         norm = torch.distributions.Normal(0.0, 1.0)
 
         if self.option_type == OptionType.CALL:
-            return spot * norm.cdf(d1) - self.strike * torch.exp(-rate * self.maturity) * norm.cdf(d2)
+            return spot * norm.cdf(d1) - self.strike * torch.exp(-rate * self.exercise_date) * norm.cdf(d2)
         else:
-            return self.strike * torch.exp(-rate * self.maturity) * norm.cdf(-d2) - spot * norm.cdf(-d1)
+            return self.strike * torch.exp(-rate * self.exercise_date) * norm.cdf(-d2) - spot * norm.cdf(-d1)
+        
+    def compute_pv_bond_option_analytically(self, model):
+        a=model.get_mean_reversion_speed()
+        rate=model.get_rate()
+        sigma=model.get_volatility()
+        calibration_date=model.calibration_date
+
+        bond_price_at_exercise_date=model.compute_bond_price(calibration_date,self.exercise_date,rate)
+        bond_price_at_underlying_maturity=model.compute_bond_price(calibration_date,self.underlying.maturity,rate)
+
+        B_TS=(1-torch.exp(-a*(self.underlying.maturity-self.exercise_date)))/a
+        sigma_tilde=sigma*torch.sqrt((1-torch.exp(-2*a*(self.exercise_date-calibration_date)))/(2*a))*B_TS
+
+        d1 = (torch.log(bond_price_at_underlying_maturity / (bond_price_at_exercise_date * self.strike)) + 0.5 * sigma_tilde ** 2) / sigma_tilde
+        d2 = d1 - sigma_tilde
+
+        norm = torch.distributions.Normal(0.0, 1.0)
+
+        if self.option_type == OptionType.CALL:
+            return bond_price_at_underlying_maturity * norm.cdf(d1) - self.strike * bond_price_at_exercise_date* norm.cdf(d2)
+        else:
+            return self.strike * bond_price_at_exercise_date * norm.cdf(-d2) - bond_price_at_underlying_maturity * norm.cdf(-d1)
         
     def compute_dVegadSigma_analytically(self, model):
         spot = model.get_spot()
         rate = model.get_rate()
         sigma = model.get_volatility()
-        T = self.maturity
+        T = self.exercise_date
 
         d1 = (torch.log(spot / self.strike) + (rate+0.5 * sigma ** 2) * T) / (sigma * torch.sqrt(T))
         d2 = d1 - sigma * torch.sqrt(T)
@@ -80,7 +106,7 @@ class EuropeanOption(Product):
         spot = model.get_spot()
         rate = model.get_rate()
         sigma = model.get_volatility()
-        T = self.maturity
+        T = self.exercise_date
 
         d1 = (torch.log(spot / self.strike) + (rate+0.5 * sigma ** 2) * T) / (sigma * torch.sqrt(T))
         d2 = d1 - sigma * torch.sqrt(T)

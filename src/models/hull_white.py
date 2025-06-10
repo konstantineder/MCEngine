@@ -50,20 +50,20 @@ class HullWhiteModel(Model):
     
     def resolve_request(self, req, state):
 
-        if req.request_type == ModelRequestType.SPOT:
+        if req.request_type == RequestType.SPOT:
             return state[0]
-        elif req.request_type == ModelRequestType.DISCOUNT_FACTOR:
+        elif req.request_type == RequestType.DISCOUNT_FACTOR:
             time = req.time1
             return self.compute_bond_price(self.calibration_date,time,state[0])
-        elif req.request_type == ModelRequestType.FORWARD_RATE:
+        elif req.request_type == RequestType.FORWARD_RATE:
             time1 = req.time1
             time2 = req.time2
             return self.compute_bond_price(time1,time2,state[0])
-        elif req.request_type == ModelRequestType.LIBOR_RATE:
+        elif req.request_type == RequestType.LIBOR_RATE:
             time1 = req.time1
             time2 = req.time2
             bond_price=self.compute_bond_price(time1,time2,state[0])
             return (1/bond_price-1)/(time2-time1)
-        elif req.request_type == ModelRequestType.NUMERAIRE:
+        elif req.request_type == RequestType.NUMERAIRE:
             log_B_t=state[1]
             return torch.exp(log_B_t)

@@ -1,6 +1,6 @@
 from products.product import *
 from maths.maths import compute_degree_of_truth
-from request_interface.request_interface import ModelRequestType, ModelRequest
+from request_interface.request_interface import RequestType, AtomicRequest
 from collections import defaultdict
 
 # Binary (digital) option
@@ -15,8 +15,8 @@ class BinaryOption(Product):
         self.modeling_timeline=self.product_timeline
         self.regression_timeline=torch.tensor([], dtype=torch.float64,device=device)
 
-        self.numeraire_requests={0: ModelRequest(ModelRequestType.NUMERAIRE,maturity)}
-        self.spot_requests={0: ModelRequest(ModelRequestType.SPOT)}
+        self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,maturity)}
+        self.spot_requests={0: AtomicRequest(RequestType.SPOT)}
 
     def get_requests(self):
         requests=defaultdict(set)

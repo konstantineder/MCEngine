@@ -1,6 +1,6 @@
 from products.product import *
 from maths.maths import compute_degree_of_truth
-from request_interface.request_interface import ModelRequestType, ModelRequest
+from request_interface.request_interface import RequestType, AtomicRequest
 import numpy as np
 from collections import defaultdict
 
@@ -26,8 +26,8 @@ class BarrierOption(Product):
         self.use_seed = use_seed
         self.rng = np.random.default_rng(use_seed)
 
-        self.numeraire_requests={idx: ModelRequest(ModelRequestType.NUMERAIRE,t) for idx, t in enumerate(self.modeling_timeline)}
-        self.spot_requests={idx: ModelRequest(ModelRequestType.SPOT) for idx in range(len(self.modeling_timeline))}
+        self.numeraire_requests={idx: AtomicRequest(RequestType.NUMERAIRE,t) for idx, t in enumerate(self.modeling_timeline)}
+        self.spot_requests={idx: AtomicRequest(RequestType.SPOT) for idx in range(len(self.modeling_timeline))}
 
     def get_requests(self):
         requests=defaultdict(set)

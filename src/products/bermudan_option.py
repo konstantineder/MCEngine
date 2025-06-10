@@ -1,5 +1,5 @@
 from products.product import *
-from request_interface.request_interface import ModelRequestType, ModelRequest
+from request_interface.request_interface import RequestType, AtomicRequest
 import numpy as np
 from collections import defaultdict
 
@@ -17,8 +17,8 @@ class BermudanOption:
         ]
         self.num_exercise_rights = 1
 
-        self.numeraire_requests={idx: ModelRequest(ModelRequestType.NUMERAIRE,t) for idx, t in enumerate(self.modeling_timeline)}
-        self.spot_requests={idx: ModelRequest(ModelRequestType.SPOT) for idx in range(len(self.modeling_timeline))}
+        self.numeraire_requests={idx: AtomicRequest(RequestType.NUMERAIRE,t) for idx, t in enumerate(self.modeling_timeline)}
+        self.spot_requests={idx: AtomicRequest(RequestType.SPOT) for idx in range(len(self.modeling_timeline))}
 
     def get_requests(self):
         requests=defaultdict(set)

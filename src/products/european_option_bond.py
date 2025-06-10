@@ -1,5 +1,5 @@
 from products.product import *
-from request_interface.request_interface import ModelRequestType, ModelRequest
+from request_interface.request_interface import RequestType, AtomicRequest
 from collections import defaultdict
 
 # AAD-compatible European option
@@ -15,8 +15,8 @@ class EuropeanBondOption(Product):
         self.modeling_timeline=self.product_timeline
         self.regression_timeline=torch.tensor([], dtype=torch.float64,device=device)
 
-        self.numeraire_requests={0: ModelRequest(ModelRequestType.NUMERAIRE,maturity)}
-        self.forward_requests={0: ModelRequest(ModelRequestType.FORWARD_RATE,maturity,underlying_maturity)}
+        self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,maturity)}
+        self.forward_requests={0: AtomicRequest(RequestType.FORWARD_RATE,maturity,underlying_maturity)}
     
     def get_requests(self):
         requests=defaultdict(set)

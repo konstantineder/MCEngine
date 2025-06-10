@@ -21,15 +21,15 @@
 #         date = startdate + tenor
 #         idx=0
 #         while date < enddate:
-#             self.libor_requests[idx]=ModelRequest(ModelRequestType.LIBOR_RATE, date - tenor, date)
-#             self.numeraire_requests[idx]=ModelRequest(ModelRequestType.NUMERAIRE, date)
+#             self.libor_requests[idx]=AtomicRequest(RequestType.LIBOR_RATE, date - tenor, date)
+#             self.numeraire_requests[idx]=AtomicRequest(RequestType.NUMERAIRE, date)
 #             self.product_timeline.append(date)
 #             date += tenor
 #             idx+=1
 
 #         # Last discount factor at enddate
-#         self.numeraire_requests[idx]=ModelRequest(ModelRequestType.DISCOUNT_FACTOR, enddate)
-#         self.libor_requests[idx]=ModelRequest(ModelRequestType.LIBOR_RATE, date - tenor, enddate)
+#         self.numeraire_requests[idx]=AtomicRequest(RequestType.DISCOUNT_FACTOR, enddate)
+#         self.libor_requests[idx]=AtomicRequest(RequestType.LIBOR_RATE, date - tenor, enddate)
 #         self.product_timeline.append(enddate)
 #         self.product_timeline=torch.tensor(self.product_timeline, dtype=torch.float64)
 #         self.modeling_timeline=self.product_timeline

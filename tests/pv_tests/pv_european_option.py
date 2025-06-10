@@ -8,7 +8,8 @@ from itertools import product as cartesian_product
 from controller.controller import SimulationController
 from models.black_scholes import BlackScholesModel
 from metrics.pv_metric import PVMetric
-from products.european_option_equity import EuropeanOption, OptionType
+from products.european_option import EuropeanOption, OptionType
+from products.equity import Equity
 from engine.engine import SimulationScheme
 
 
@@ -40,7 +41,8 @@ if __name__ == "__main__":
         for T, S0, sigma, rate, strike in param_grid:
             model = BlackScholesModel(0, S0, rate, sigma)
             #product = BinaryOption(T,strike,10,OptionType.CALL)
-            product = EuropeanOption(T,strike,OptionType.CALL)
+            underlying=Equity(id="")
+            product = EuropeanOption(underlying=underlying,exercise_date=T,strike=strike,option_type=OptionType.CALL)
             #portfolio=[BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0,T,OptionType.CALL,True,10)]
             portfolio = [product]
             metrics=[PVMetric()]
@@ -92,7 +94,8 @@ if __name__ == "__main__":
         spot, rate, vola = args
         model_deriv = BlackScholesModel(0, spot, rate, vola)
         #product_deriv = BarrierOption(100, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,True,10)
-        product_deriv = EuropeanOption(2.0,100,OptionType.CALL)
+        underlying_deriv=Equity(id="")
+        product_deriv = EuropeanOption(underlying=underlying_deriv,exercise_date=2.0,strike=100,option_type=OptionType.CALL)
         #product_deriv=BinaryOption(2.0,100,10,OptionType.CALL)
         
         return float(product_deriv.compute_pv_analytically(model_deriv))
