@@ -25,8 +25,8 @@ if __name__ == "__main__":
     exercise_dates = [0.5,1.0,1.5,2.0,2.5]
     maturity = 3.0
     strike = 0.0
-
-    underlying=InterestRateSwap(fixed_rate=0.03,startdate=0.0,enddate=maturity,tenor=0.25)
+    
+    underlying = InterestRateSwap(startdate=0.0,enddate=maturity,notional=1.0,fixed_rate=0.03,tenor_fixed=0.25,tenor_float=0.25)
     product = BermudanOption(underlying=underlying, exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
 
     portfolio=[product]
@@ -38,10 +38,10 @@ if __name__ == "__main__":
 
     metrics=[ee_metric, pfe_metric]
 
-    num_paths_mainsim=100000
+    num_paths_mainsim=10000
     num_paths_presim=10000
-    num_steps=50
-    sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.ANALYTICAL, False, exposure_timeline)
+    num_steps=1
+    sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.EULER, False, exposure_timeline)
 
     sim_results=sc.run_simulation()
 

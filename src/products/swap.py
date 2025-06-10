@@ -1,113 +1,119 @@
 from products.product import *
+from products.bond import Bond
 from request_interface.request_interface import RequestType, CompositeRequest, AtomicRequest
 from collections import defaultdict
 
 class InterestRateSwap(Product):
-    def __init__(self, fixed_rate, startdate, enddate, tenor):
+    def __init__(self, startdate, enddate, notional, fixed_rate, tenor_fixed, tenor_float):
         super().__init__()
-        self.fixed_rate = torch.tensor([fixed_rate], dtype=torch.float64, device=device)
-        self.startdate = torch.tensor([startdate], dtype=torch.float64, device=device)
-        self.enddate = torch.tensor([enddate], dtype=torch.float64, device=device)
-        self.tenor = torch.tensor([tenor], dtype=torch.float64, device=device)
+        self.startdate = startdate
+        self.enddate = enddate
+        self.notional = notional
+        self.fixed_rate = fixed_rate
+        self.tenor_fixed = tenor_fixed
+        self.tenor_float = tenor_float
+        self.fixed_leg = Bond(startdate=startdate,maturity=enddate,notional=notional,tenor=tenor_fixed,fixed_rate=fixed_rate)
+        self.floating_leg = Bond(startdate=startdate,maturity=enddate,notional=notional,tenor=tenor_float)
 
-        self.payment_dates = []
-        self.libor_requests = {}   # LIBOR forward rates as composite requests
-        self.composite_requests = {}
-        self.numeraire_requests = {}   # For discounting each payment
-        self.handles = []
+        fixed_times = {float(t.item()) for t in self.fixed_leg.modeling_timeline}
+        float_times = {float(t.item()) for t in self.floating_leg.modeling_timeline}
+        all_times = sorted(fixed_times.union(float_times))
+        self.product_timeline = torch.tensor(all_times, dtype=torch.float64)
+        self.modeling_timeline = self.product_timeline
 
-        # Build the payment schedule and requests
-        date = startdate + tenor
-        idx = 0
-        while date < enddate:
-            self.libor_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, date)
-            self.numeraire_requests[idx] = AtomicRequest(RequestType.NUMERAIRE, date)
-            self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=date-tenor)
-            self.payment_dates.append(date)
-            date += tenor
-            idx += 1
-
-        # Final payment at maturity
-        self.libor_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, enddate)
-        self.numeraire_requests[idx] = AtomicRequest(RequestType.DISCOUNT_FACTOR, enddate)
-        self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=date-tenor)
-        self.composite_requests[idx + 1] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=date)
-        self.payment_dates.append(enddate)
-
-        self.payment_dates = torch.tensor(self.payment_dates, dtype=torch.float64, device=device)
-        self.modeling_timeline = self.payment_dates
         self.regression_timeline = torch.tensor([], dtype=torch.float64, device=device)
 
     def __eq__(self, other):
         return (
             isinstance(other, InterestRateSwap) and
-            torch.equal(self.startdate, other.startdate) and
-            torch.equal(self.enddate, other.enddate) and
-            torch.equal(self.tenor, other.tenor) and
-            torch.equal(self.fixed_rate, other.fixed_rate)
+            self.startdate == other.startdate and
+            self.enddate == other.enddate and
+            self.notional == other.notional and
+            self.fixed_rate == other.fixed_rate and
+            self.tenor_fixed == other.tenor_fixed and
+            self.tenor_float == other.tenor_float
         )
 
     def __hash__(self):
         return hash((
-            self.startdate.item(),
-            self.enddate.item(),
-            self.tenor.item(),
-            self.fixed_rate.item()
+            self.startdate,
+            self.enddate,
+            self.notional,
+            self.fixed_rate,
+            self.tenor_fixed,
+            self.tenor_float
         ))
 
     def get_requests(self):
-        requests = defaultdict(set)
-        for t, req in self.numeraire_requests.items():
-            requests[t].add(req)
+        requests = defaultdict(list)
+
+        fixed_reqs = self.fixed_leg.get_requests()
+        for t, reqs in fixed_reqs.items():
+            for req in reqs:
+                requests[t].append(req)
+
+        float_reqs = self.floating_leg.get_requests()
+        for t, reqs in float_reqs.items():
+            for req in reqs:
+                requests[t].append(req)
+
         return requests
 
     def get_atomic_requests(self):
         # Update time1 for composite requests with the observation_date
-        requests = defaultdict(set)
-        for t, req in self.composite_requests.items():
-            requests[t].add(req)
-        return requests
+        atomic_requests = defaultdict(list)
 
-    def get_composite_requests(self, observation_date=None):
-        if observation_date==None:
-            return CompositeRequest(self)
-        else:
-            swap=InterestRateSwap(self.fixed_rate,observation_date,self.enddate.item(),self.tenor.item())
-            return CompositeRequest(swap)
+        fixed_reqs = self.fixed_leg.get_atomic_requests()
+        for t, reqs in fixed_reqs.items():
+            for req in reqs:
+                atomic_requests[t].append(req)
 
+        float_reqs = self.floating_leg.get_atomic_requests()
+        for t, reqs in float_reqs.items():
+            for req in reqs:
+                atomic_requests[t].append(req)
+
+        return atomic_requests
+    
+    def generate_composite_requests(self, observation_date):
+        swap=InterestRateSwap(observation_date,self.enddate,self.notional,self.fixed_rate,self.tenor_fixed,self.tenor_float)
+        return CompositeRequest(swap)
+
+    def get_composite_requests(self):
+        return defaultdict(set)
+            
     def get_value(self, resolved_atomic_requests):
         """
         Present value of floating - fixed leg, discounted
         Floating leg: use resolved LIBOR composite requests
         Fixed leg: use fixed_rate
         """
-        total_value = torch.zeros_like(resolved_atomic_requests[0], dtype=torch.float64, device=device)
+        fixed_value = self.fixed_leg.get_value(resolved_atomic_requests)
+        float_value = self.floating_leg.get_value(resolved_atomic_requests)
 
-        for t in self.numeraire_requests.keys():
-            discount_req = self.composite_requests[t]
-            discount_next_req = self.composite_requests[t+1]
+        return fixed_value - float_value
 
-            discount = resolved_atomic_requests[discount_req.handle]
-            discount_next = resolved_atomic_requests[discount_next_req.handle]
+    def compute_normalized_cashflows(self, time_idx, model, resolved_requests, regression_monomials=None, state=None):
+        total_value = torch.zeros_like(resolved_requests[0][0], dtype=torch.float64, device=device)
 
-            delta = self.tenor  # assuming fixed accrual period
+        time = self.modeling_timeline[time_idx]
 
-            float_leg = discount
-            fixed_leg = (1 + self.fixed_rate * delta) * discount_next
+        fixed_cashflow = torch.zeros_like(total_value)
+        float_cashflow = torch.zeros_like(total_value)
 
-            cashflow_value = float_leg - fixed_leg
-            total_value += cashflow_value
+        if time in self.fixed_leg.modeling_timeline:
+            fixed_time_idx = (self.fixed_leg.modeling_timeline == time).nonzero(as_tuple=True)[0].item()
+            _, fixed_cashflow = self.fixed_leg.compute_normalized_cashflows(
+                fixed_time_idx, model, resolved_requests, regression_monomials, state
+            )
+            total_value += fixed_cashflow
 
-        return total_value
+        if time in self.floating_leg.modeling_timeline:
+            float_time_idx = (self.floating_leg.modeling_timeline == time).nonzero(as_tuple=True)[0].item()
+            _, float_cashflow = self.floating_leg.compute_normalized_cashflows(
+                float_time_idx, model, resolved_requests, regression_monomials, state
+            )
+            total_value -= float_cashflow
 
-    def compute_normalized_cashflows(self, time_idx, model, resolved_requests,regression_monomials=None, state=None):
-        libor_rate = resolved_requests[self.libor_requests[time_idx].handle]
-        numeraire= resolved_requests[self.numeraire_requests[time_idx].handle]
+        return state, fixed_cashflow - float_cashflow
 
-        dt=self.tenor
-
-        float_leg = libor_rate * dt
-        fixed_leg = self.fixed_rate * dt
-        cashflow = (float_leg - fixed_leg)/numeraire
-
-        return state, cashflow

@@ -16,7 +16,7 @@ class EuropeanOption(Product):
         self.underlying=underlying
 
         self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,exercise_date)}
-        self.underlying_request={0: underlying.get_composite_requests(exercise_date)}
+        self.underlying_request={0: underlying.generate_composite_requests(exercise_date)}
     
     def get_requests(self):
         requests=defaultdict(set)
@@ -25,12 +25,12 @@ class EuropeanOption(Product):
 
         return requests
     
-    def get_composite_requests(self,observation_date=None):
-        requests=defaultdict(set)
-        for t, req in self.underlying_request.items():
-            requests[t].add(req)
+    def get_composite_requests(self):
+        comp_requests=defaultdict(set)
+        for time, comp_req in self.underlying_request.items():
+            comp_requests[time].add(comp_req)
 
-        return requests
+        return comp_requests
 
     def payoff(self, spots, model):
         zero = torch.tensor([0.0], dtype=torch.float64, device=device)

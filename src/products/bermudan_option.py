@@ -23,7 +23,7 @@ class BermudanOption:
         self.underlying_requests={}
         idx=0
         for exercise_date in exercise_dates:
-            self.underlying_requests[idx]=underlying.get_composite_requests(exercise_date)
+            self.underlying_requests[idx]=underlying.generate_composite_requests(exercise_date)
             idx+=1
 
     def get_requests(self):
@@ -36,7 +36,8 @@ class BermudanOption:
 
         return requests
     
-    def get_composite_requests(self,observation_date=None):
+    
+    def get_composite_requests(self):
         requests=defaultdict(set)
         for t, req in self.underlying_requests.items():
             requests[t].add(req)

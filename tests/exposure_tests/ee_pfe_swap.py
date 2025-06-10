@@ -2,7 +2,6 @@ from context import *
 
 import torch
 import numpy as np
-from IPython.display import display
 import matplotlib.pyplot as plt
 from controller.controller import SimulationController
 from models.vasicek import *
@@ -25,7 +24,7 @@ if __name__ == "__main__":
     maturity = 3.0
     strike = 100.0
 
-    product = InterestRateSwap(fixed_rate=0.03,startdate=0.,enddate=2.,tenor=0.25)
+    product = InterestRateSwap(startdate=0.0,enddate=2.0,notional=1.0,fixed_rate=0.03,tenor_fixed=0.5,tenor_float=0.25)
     #product = BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,10)
     #product = BermudanOption(maturity=maturity, exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
 

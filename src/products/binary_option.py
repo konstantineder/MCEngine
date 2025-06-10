@@ -26,7 +26,6 @@ class BinaryOption(Product):
         for t, req in self.spot_requests.items():
             requests[t].add(req)
 
-
         return requests
 
     # Operator overloading of the payoff computation method
