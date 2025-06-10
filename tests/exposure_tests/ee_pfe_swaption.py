@@ -11,11 +11,11 @@ from mpl_toolkits.mplot3d import Axes3D
 from itertools import groupby
 from operator import itemgetter
 from controller.controller import SimulationController
-from models.black_scholes import *
+from models.vasicek import *
 from metrics.pfe_metric import *
 from metrics.epe_metric import *
 from products.european_option import *
-from products.equity import Equity
+from products.swap import InterestRateSwap
 from engine.engine import *
 
 
@@ -27,13 +27,13 @@ if __name__ == "__main__":
     # Setup model and product
 
 
-    model = BlackScholesModel(calibration_date=0.0, spot=100, rate=0.05, sigma=0.2)
+    model = VasicekModel(calibration_date=0.,rate=0.03,mean=0.05,mean_reversion_speed=0.02,volatility=0.02)
     exercise_dates = [3.0]
     maturity = 3.0
     strike = 100.0
 
-    underlying=Equity(id="")
-    product = EuropeanOption(underlying=underlying,exercise_date=2.0,strike=100,option_type=OptionType.CALL)
+    underlying=InterestRateSwap(fixed_rate=0.03,startdate=0.,enddate=2.,tenor=0.25)
+    product = EuropeanOption(underlying=underlying,exercise_date=1.5,strike=0.0,option_type=OptionType.CALL)
     #product = BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,10)
     #product = BermudanOption(maturity=maturity, exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
 
@@ -46,9 +46,9 @@ if __name__ == "__main__":
 
     metrics=[ee_metric, pfe_metric]
 
-    num_paths_mainsim=10000
+    num_paths_mainsim=100000
     num_paths_presim=10000
-    num_steps=1
+    num_steps=50
     sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.ANALYTICAL, False, exposure_timeline)
 
     sim_results=sc.run_simulation()

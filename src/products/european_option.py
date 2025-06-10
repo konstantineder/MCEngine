@@ -16,7 +16,7 @@ class EuropeanOption(Product):
         self.underlying=underlying
 
         self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,exercise_date)}
-        self.underlying_request={0: underlying.get_composite_requests()}
+        self.underlying_request={0: underlying.get_composite_requests(self.exercise_date)}
     
     def get_requests(self):
         requests=defaultdict(set)
@@ -25,7 +25,7 @@ class EuropeanOption(Product):
 
         return requests
     
-    def get_composite_requests(self):
+    def get_composite_requests(self,observation_date=None):
         requests=defaultdict(set)
         for t, req in self.underlying_request.items():
             requests[t].add(req)

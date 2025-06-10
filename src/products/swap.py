@@ -11,7 +11,8 @@ class InterestRateSwap(Product):
         self.tenor = torch.tensor([tenor], dtype=torch.float64, device=device)
 
         self.payment_dates = []
-        self.composite_requests = {}   # LIBOR forward rates as composite requests
+        self.libor_requests = {}   # LIBOR forward rates as composite requests
+        self.composite_requests = {}
         self.numeraire_requests = {}   # For discounting each payment
         self.handles = []
 
@@ -19,15 +20,18 @@ class InterestRateSwap(Product):
         date = startdate + tenor
         idx = 0
         while date < enddate:
-            self.composite_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, date)
+            self.libor_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, date)
             self.numeraire_requests[idx] = AtomicRequest(RequestType.NUMERAIRE, date)
+            self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=None,time2=date-tenor)
             self.payment_dates.append(date)
             date += tenor
             idx += 1
 
         # Final payment at maturity
-        self.composite_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, enddate)
+        self.libor_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, enddate)
         self.numeraire_requests[idx] = AtomicRequest(RequestType.DISCOUNT_FACTOR, enddate)
+        self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=None,time2=date-tenor)
+        self.composite_requests[idx + 1] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=None,time2=date)
         self.payment_dates.append(enddate)
 
         self.payment_dates = torch.tensor(self.payment_dates, dtype=torch.float64, device=device)
@@ -57,16 +61,20 @@ class InterestRateSwap(Product):
             requests[t].add(req)
         return requests
 
-    def get_atomic_requests(self, observation_date):
+    def get_atomic_requests(self):
         # Update time1 for composite requests with the observation_date
         requests = defaultdict(set)
         for t, req in self.composite_requests.items():
-            req.time1 = observation_date
             requests[t].add(req)
         return requests
 
-    def get_composite_requests(self):
-        return CompositeRequest(self)
+    def get_composite_requests(self, observation_date=None):
+        if observation_date==None:
+            return CompositeRequest(self)
+        else:
+            for t, req in self.composite_requests.items():
+                req.time1=observation_date
+            return CompositeRequest(self)
 
     def get_value(self, resolved_atomic_requests):
         """
@@ -74,21 +82,21 @@ class InterestRateSwap(Product):
         Floating leg: use resolved LIBOR composite requests
         Fixed leg: use fixed_rate
         """
-        total_value = torch.tensor([0.0], dtype=torch.float64, device=device)
+        total_value = torch.zeros_like(resolved_atomic_requests[0], dtype=torch.float64, device=device)
 
-        for t in self.composite_requests.keys():
-            libor_req = self.composite_requests[t]
-            discount_req = self.numeraire_requests[t]
+        for t in self.numeraire_requests.keys():
+            discount_req = self.composite_requests[t]
+            discount_next_req = self.composite_requests[t+1]
 
-            libor_rate = resolved_atomic_requests[libor_req.handle]
             discount = resolved_atomic_requests[discount_req.handle]
+            discount_next = resolved_atomic_requests[discount_next_req.handle]
 
             delta = self.tenor  # assuming fixed accrual period
 
-            float_leg = libor_rate * delta
-            fixed_leg = self.fixed_rate * delta
+            float_leg = discount_next
+            fixed_leg = (1 + self.fixed_rate * delta) * discount
 
-            cashflow_value = (float_leg - fixed_leg) * discount
+            cashflow_value = float_leg - fixed_leg
             total_value += cashflow_value
 
         return total_value

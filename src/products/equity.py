@@ -18,7 +18,7 @@ class Equity(Product):
     def __hash__(self):
         return hash(self.id)
     
-    def get_atomic_requests(self, observation_date):
+    def get_atomic_requests(self):
         requests=defaultdict(set)
 
         for t, req in self.spot_requests.items():
@@ -26,8 +26,9 @@ class Equity(Product):
 
         return requests
     
-    def get_composite_requests(self):
+    def get_composite_requests(self, observation_date=None):
         return CompositeRequest(self)
+
     
     def get_value(self, resolved_atomic_requests):
         return resolved_atomic_requests[self.spot_requests[0].handle]

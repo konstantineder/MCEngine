@@ -28,17 +28,21 @@ class Bond(Product):
 
         return requests
     
-    def get_atomic_requests(self,observation_date):
+    def get_atomic_requests(self):
         requests=defaultdict(set)
 
         for t, req in self.composite_request.items():
-            req.time1=observation_date
             requests[t].add(req)
 
         return requests
     
-    def get_composite_requests(self):
-        return CompositeRequest(self)
+    def get_composite_requests(self, observation_date=None):
+        if observation_date==None:
+            return CompositeRequest(self)
+        else:
+            for t, req in self.composite_request.items():
+                req.time1=observation_date
+            return CompositeRequest(self)
     
     def get_value(self, resolved_atomic_requests):
         return resolved_atomic_requests[self.composite_request[0].handle]

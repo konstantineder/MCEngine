@@ -171,12 +171,12 @@ class SimulationController:
 
             if t_reg in product_regression_timeline:
                 i_t = product_timeline.tolist().index(t_reg)
-                numeraire = resolved_requests[product.numeraire_requests[i_t].handle]
-                explanatory = resolved_requests[product.spot_requests[i_t].handle]
+                numeraire = resolved_requests[0][product.numeraire_requests[i_t].handle]
+                explanatory = resolved_requests[0][product.spot_requests[i_t].handle]
             else:
                 i_t = self.exposure_timeline.tolist().index(t_reg)
-                numeraire = resolved_requests[self.numeraire_requests[i_t].handle]
-                explanatory = resolved_requests[self.spot_requests[i_t].handle]
+                numeraire = resolved_requests[0][self.numeraire_requests[i_t].handle]
+                explanatory = resolved_requests[0][self.spot_requests[i_t].handle]
 
             normalized_cfs = numeraire.unsqueeze(1) * total_cfs
 
@@ -216,7 +216,7 @@ class SimulationController:
                     cfs+=new_cfs
                     t_start+=1
 
-                explanatory=resolved_requests[self.spot_requests[i].handle]
+                explanatory=resolved_requests[0][self.spot_requests[i].handle]
                 # Compute continuation value: A @ coeffs_per_path
                 A = self.regression_monomials.get_regression_matrix(explanatory)
 
@@ -224,7 +224,7 @@ class SimulationController:
                     self.regression_coeffs[product.product_id][i][s] for s in prod_state
                 ], dim=0)  # shape: [num_paths, 3]
 
-                numeraire= resolved_requests[self.numeraire_requests[i].handle]
+                numeraire= resolved_requests[0][self.numeraire_requests[i].handle]
                 exposure = (A * coeffs_matrix).sum(dim=1)/numeraire
                 exposures.append(exposure)
 

@@ -39,8 +39,8 @@ class CompositeRequest:
     def get_handle(self):
         return self.underlying_asset.composite_req_handle
 
-    def get_atomic_requests(self,observation_date):
-        return self.underlying_asset.get_atomic_requests(observation_date)
+    def get_atomic_requests(self):
+        return self.underlying_asset.get_atomic_requests()
 
     def get_value(self,resolved_atomic_requests):
         return self.underlying_asset.get_value(resolved_atomic_requests)
@@ -89,7 +89,7 @@ class RequestInterface:
                 for comp_req in comp_reqs:
                     all_comp_requests[time_idx].add(comp_req)
                     comp_counter = self._register(comp_req, comp_request_key_to_handle, time_idx, comp_counter)   
-                    atomic_requests=comp_req.get_atomic_requests(t)
+                    atomic_requests=comp_req.get_atomic_requests()
                     for _, reqs in atomic_requests.items():
                         for req in reqs:
                             all_requests[time_idx].add(req)
