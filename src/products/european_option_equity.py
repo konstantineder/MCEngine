@@ -25,7 +25,6 @@ class EuropeanOption(Product):
         for t, req in self.spot_requests.items():
             requests[t].add(req)
 
-
         return requests
 
     def payoff(self, spots, model):

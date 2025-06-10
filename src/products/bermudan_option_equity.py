@@ -4,7 +4,7 @@ import numpy as np
 from collections import defaultdict
 
 class BermudanOption:
-    def __init__(self, underlying, exercise_dates, strike, option_type):
+    def __init__(self, exercise_dates, strike, option_type):
         super().__init__()
         self.strike = torch.tensor([strike], dtype=torch.float64, device=device)
         self.option_type = option_type
@@ -20,12 +20,6 @@ class BermudanOption:
         self.numeraire_requests={idx: AtomicRequest(RequestType.NUMERAIRE,t) for idx, t in enumerate(self.modeling_timeline)}
         self.spot_requests={idx: AtomicRequest(RequestType.SPOT) for idx in range(len(self.modeling_timeline))}
 
-        self.underlying_requests={}
-        idx=0
-        for exercise_date in exercise_dates:
-            self.underlying_requests[idx]=underlying.get_composite_requests(exercise_date)
-            idx+=1
-
     def get_requests(self):
         requests=defaultdict(set)
         for t, req in self.numeraire_requests.items():
@@ -35,14 +29,6 @@ class BermudanOption:
             requests[t].add(req)
 
         return requests
-    
-    def get_composite_requests(self,observation_date=None):
-        requests=defaultdict(set)
-        for t, req in self.underlying_requests.items():
-            requests[t].add(req)
-
-        return requests
-
 
     def get_num_states(self):
         return 2
@@ -58,7 +44,7 @@ class BermudanOption:
             return torch.maximum(self.strike - spots, zero)
     
     def compute_normalized_cashflows(self, time_idx, model_params, resolved_requests, regression_monomials, state=[]):
-        spot = resolved_requests[1][self.underlying_requests[time_idx].get_handle()]
+        spot = resolved_requests[self.spot_requests[time_idx].handle]
         immediate = self.payoff(spot, model_params)
 
         # Check if time is the last in the product timeline
@@ -74,7 +60,7 @@ class BermudanOption:
         should_exercise = (immediate > continuation.squeeze()) & (state > 0)
 
         # Accumulate cashflows
-        numeraire=resolved_requests[0][self.numeraire_requests[time_idx].handle]
+        numeraire=resolved_requests[self.numeraire_requests[time_idx].handle]
         cashflows = immediate * should_exercise.float()/numeraire
 
         # Update remaining rights
@@ -83,8 +69,8 @@ class BermudanOption:
         return state, cashflows
     
 class AmericanOption(BermudanOption):
-    def __init__(self, underlying, maturity, num_exercise_dates, strike, option_type):
+    def __init__(self, maturity, num_exercise_dates, strike, option_type):
         exercise_dates=np.linspace(0.,maturity,num_exercise_dates) if num_exercise_dates>1 else [maturity]
-        super().__init__(underlying=underlying, exercise_dates=exercise_dates,
+        super().__init__(exercise_dates=exercise_dates,
                          strike=strike,
                          option_type=option_type)

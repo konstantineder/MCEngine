@@ -8,7 +8,8 @@ from controller.controller import SimulationController
 from models.black_scholes import *
 from metrics.pfe_metric import *
 from metrics.epe_metric import *
-from products.bermudan_option import *
+from products.bermudan_option import BermudanOption, OptionType
+from products.equity import Equity
 from engine.engine import *
 
 
@@ -25,7 +26,8 @@ if __name__ == "__main__":
     maturity = 3.0
     strike = 100.0
 
-    product = BermudanOption(exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
+    underlying=Equity('id')
+    product = BermudanOption(underlying=underlying, exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
 
     portfolio=[product]
 
