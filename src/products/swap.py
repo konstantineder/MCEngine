@@ -22,7 +22,7 @@ class InterestRateSwap(Product):
         while date < enddate:
             self.libor_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, date)
             self.numeraire_requests[idx] = AtomicRequest(RequestType.NUMERAIRE, date)
-            self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=None,time2=date-tenor)
+            self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=date-tenor)
             self.payment_dates.append(date)
             date += tenor
             idx += 1
@@ -30,8 +30,8 @@ class InterestRateSwap(Product):
         # Final payment at maturity
         self.libor_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, enddate)
         self.numeraire_requests[idx] = AtomicRequest(RequestType.DISCOUNT_FACTOR, enddate)
-        self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=None,time2=date-tenor)
-        self.composite_requests[idx + 1] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=None,time2=date)
+        self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=date-tenor)
+        self.composite_requests[idx + 1] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=date)
         self.payment_dates.append(enddate)
 
         self.payment_dates = torch.tensor(self.payment_dates, dtype=torch.float64, device=device)
@@ -72,9 +72,8 @@ class InterestRateSwap(Product):
         if observation_date==None:
             return CompositeRequest(self)
         else:
-            for t, req in self.composite_requests.items():
-                req.time1=observation_date
-            return CompositeRequest(self)
+            swap=InterestRateSwap(self.fixed_rate,observation_date.item(),self.enddate.item(),self.tenor.item())
+            return CompositeRequest(swap)
 
     def get_value(self, resolved_atomic_requests):
         """
@@ -93,8 +92,8 @@ class InterestRateSwap(Product):
 
             delta = self.tenor  # assuming fixed accrual period
 
-            float_leg = discount_next
-            fixed_leg = (1 + self.fixed_rate * delta) * discount
+            float_leg = discount
+            fixed_leg = (1 + self.fixed_rate * delta) * discount_next
 
             cashflow_value = float_leg - fixed_leg
             total_value += cashflow_value
