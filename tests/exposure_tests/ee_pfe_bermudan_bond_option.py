@@ -4,12 +4,12 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from controller.controller import SimulationController
-from models.vasicek import *
-from metrics.pfe_metric import *
-from metrics.epe_metric import *
+from models.vasicek import VasicekModel
+from metrics.pfe_metric import PFEMetric
+from metrics.epe_metric import EPEMetric
 from products.bermudan_option import BermudanOption, OptionType
 from products.bond import Bond
-from engine.engine import *
+from engine.engine import SimulationScheme
 
 
 if __name__ == "__main__":
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     maturity = 3.0
     strike = 0.5
 
-    underlying=Bond(0.0,3.0)
+    underlying=Bond(startdate=0.0,maturity=3.0,notional=1.0,tenor=3.0, pays_notional=True, fixed_rate=0.0)
     product = BermudanOption(underlying=underlying, exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
 
     portfolio=[product]
@@ -37,10 +37,10 @@ if __name__ == "__main__":
 
     metrics=[ee_metric, pfe_metric]
 
-    num_paths_mainsim=100000
+    num_paths_mainsim=10000
     num_paths_presim=10000
-    num_steps=50
-    sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.ANALYTICAL, False, exposure_timeline)
+    num_steps=1
+    sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.EULER, False, exposure_timeline)
 
     sim_results=sc.run_simulation()
 

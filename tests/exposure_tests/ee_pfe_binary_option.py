@@ -1,21 +1,14 @@
 from context import *
 
 import torch
-from enum import Enum, auto
 import numpy as np
-import pandas as pd
-from IPython.display import display
 import matplotlib.pyplot as plt
-from itertools import product as cartesian_product
-from mpl_toolkits.mplot3d import Axes3D
-from itertools import groupby
-from operator import itemgetter
 from controller.controller import SimulationController
-from models.black_scholes import *
-from metrics.pfe_metric import *
-from metrics.epe_metric import *
-from products.binary_option import *
-from engine.engine import *
+from models.black_scholes import BlackScholesModel
+from metrics.pfe_metric import PFEMetric
+from metrics.epe_metric import EPEMetric
+from products.binary_option import BinaryOption, OptionType
+from engine.engine import SimulationScheme
 
 
 if __name__ == "__main__":

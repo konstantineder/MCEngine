@@ -1,6 +1,6 @@
 from products.product import *
 from maths.maths import compute_degree_of_truth
-from request_interface.request_interface import RequestType, AtomicRequest
+from request_interface.request_interface import AtomicRequestType, AtomicRequest
 from collections import defaultdict
 
 # Binary (digital) option
@@ -15,17 +15,16 @@ class BinaryOption(Product):
         self.modeling_timeline=self.product_timeline
         self.regression_timeline=torch.tensor([], dtype=torch.float64,device=device)
 
-        self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,maturity)}
-        self.spot_requests={0: AtomicRequest(RequestType.SPOT)}
+        self.numeraire_requests={0: AtomicRequest(AtomicRequestType.NUMERAIRE,maturity)}
+        self.spot_requests={0: AtomicRequest(AtomicRequestType.SPOT)}
 
-    def get_requests(self):
-        requests=defaultdict(set)
+    def get_atomic_requests(self):
+        requests=defaultdict(list)
         for t, req in self.numeraire_requests.items():
-            requests[t].add(req)
+            requests[t].append(req)
 
         for t, req in self.spot_requests.items():
-            requests[t].add(req)
-
+            requests[t].append(req)
 
         return requests
 
@@ -40,9 +39,9 @@ class BinaryOption(Product):
 
     # Black-Scholes closed-form pricing for European options (see chapter 1)
     def compute_pv_analytically(self, model):
-        spot=model.spot
-        rate=model.rate
-        sigma=model.sigma
+        spot=model.get_spot()
+        rate=model.get_rate()
+        sigma=model.get_volatility()
 
         norm = torch.distributions.Normal(0.0, 1.0)
 
@@ -56,10 +55,10 @@ class BinaryOption(Product):
         return torch.full((num_paths,), 0, dtype=torch.long, device=device)
     
     def compute_normalized_cashflows(self, time_idx, model, resolved_requests, regression_monomials=None,state=None):
-        spots=resolved_requests[self.spot_requests[time_idx].handle]
+        spots=resolved_requests[0][self.spot_requests[time_idx].handle]
         cfs = self.payoff(spots,model)
 
-        numeraire=resolved_requests[self.numeraire_requests[time_idx].handle]
+        numeraire=resolved_requests[0][self.numeraire_requests[time_idx].handle]
         normalized_cfs=cfs/numeraire
 
         return state, normalized_cfs

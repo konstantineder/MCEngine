@@ -1,5 +1,6 @@
 from common.packages import *
 from enum import Enum
+from collections import defaultdict
 
 # Enum for option types
 class OptionType(Enum):
@@ -14,6 +15,18 @@ class SettlementType(Enum):
 class Product:
     def __init__(self, product_id=0):
         self.product_id=product_id
+
+    def get_atomic_requests(self):
+        return defaultdict(list)
+    
+    def get_composite_requests(self):
+        return defaultdict(list)
+    
+    def get_atomic_requests_for_underlying(self):
+        return defaultdict(list)
+    
+    def generate_composite_requests_for_date(self, observation_date):
+        return defaultdict(list)
 
     def get_num_states(self):
         return 1

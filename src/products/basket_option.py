@@ -1,5 +1,5 @@
 from products.product import *
-from request_interface.request_interface import RequestType, AtomicRequest
+from request_interface.request_interface import AtomicRequestType, AtomicRequest
 from collections import defaultdict
 
 class BasketOptionType(Enum):
@@ -19,17 +19,16 @@ class BasketOption(Product):
         self.basket_option_type=basket_option_type
         self.use_variation_reduction=use_variation_reduction
 
-        self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,maturity)}
-        self.spot_requests={0: AtomicRequest(RequestType.SPOT)}
+        self.numeraire_requests={0: AtomicRequest(AtomicRequestType.NUMERAIRE,maturity)}
+        self.spot_requests={0: AtomicRequest(AtomicRequestType.SPOT)}
     
-    def get_requests(self):
-        requests=defaultdict(set)
+    def get_atomic_requests(self):
+        requests=defaultdict(list)
         for t, req in self.numeraire_requests.items():
-            requests[t].add(req)
+            requests[t].append(req)
 
         for t, req in self.spot_requests.items():
-            requests[t].add(req)
-
+            requests[t].append(req)
 
         return requests
     
@@ -65,9 +64,9 @@ class BasketOption(Product):
         return payoff_classical-payoff_reduction+correction_term
         
     def compute_normalized_cashflows(self, time_idx, model, resolved_requests, regression_monomials=None, state=None):
-        spots = resolved_requests[self.spot_requests[time_idx].handle]
+        spots = resolved_requests[0][self.spot_requests[time_idx].handle]
         cfs = self.payoff(spots, model)
-        numeraire = resolved_requests[self.numeraire_requests[time_idx].handle]
+        numeraire = resolved_requests[0][self.numeraire_requests[time_idx].handle]
         normalized_cfs = cfs / numeraire
         return state, normalized_cfs
 

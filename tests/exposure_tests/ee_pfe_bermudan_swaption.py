@@ -2,15 +2,14 @@ from context import *
 
 import torch
 import numpy as np
-from IPython.display import display
 import matplotlib.pyplot as plt
 from controller.controller import SimulationController
-from models.vasicek import *
-from metrics.pfe_metric import *
-from metrics.epe_metric import *
+from models.vasicek import VasicekModel
+from metrics.pfe_metric import PFEMetric
+from metrics.epe_metric import EPEMetric
 from products.bermudan_option import BermudanOption, OptionType
-from products.swap import InterestRateSwap
-from engine.engine import *
+from products.swap import InterestRateSwap, IRSType
+from engine.engine import SimulationScheme
 
 
 if __name__ == "__main__":
@@ -25,8 +24,8 @@ if __name__ == "__main__":
     exercise_dates = [0.5,1.0,1.5,2.0,2.5]
     maturity = 3.0
     strike = 0.0
-
-    underlying=InterestRateSwap(fixed_rate=0.03,startdate=0.0,enddate=maturity,tenor=0.25)
+    
+    underlying = InterestRateSwap(startdate=0.0,enddate=maturity,notional=1.0,fixed_rate=0.03,tenor_fixed=0.25,tenor_float=0.25, irs_type=IRSType.RECEIVER)
     product = BermudanOption(underlying=underlying, exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
 
     portfolio=[product]
@@ -38,10 +37,10 @@ if __name__ == "__main__":
 
     metrics=[ee_metric, pfe_metric]
 
-    num_paths_mainsim=100000
+    num_paths_mainsim=10000
     num_paths_presim=10000
-    num_steps=50
-    sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.ANALYTICAL, False, exposure_timeline)
+    num_steps=1
+    sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.EULER, False, exposure_timeline)
 
     sim_results=sc.run_simulation()
 

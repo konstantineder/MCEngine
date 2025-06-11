@@ -42,7 +42,7 @@ if __name__ == "__main__":
         for T, S0, sigma, rate, strike in param_grid:
             model = VasicekModel(calibration_date=0.,rate=rate,mean=0.05,mean_reversion_speed=0.02,volatility=sigma)
             #product = BinaryOption(T,strike,10,OptionType.CALL)
-            underlying=Bond(0.0,2.0)
+            underlying=Bond(startdate=0.0,maturity=2.0,notional=1.0,tenor=2.0, pays_notional=True, fixed_rate=0.0)
             product = EuropeanOption(underlying=underlying,exercise_date=T,strike=strike,option_type=OptionType.CALL)
             #portfolio=[BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0,T,OptionType.CALL,True,10)]
             portfolio = [product]
@@ -82,7 +82,7 @@ if __name__ == "__main__":
     # defining the parameter grid
     param_grid = list(cartesian_product(T_vals,S0_vals, sigma_vals, r_vals, strikes))
 
-    num_paths = 100000
+    num_paths = 10000
     steps = 50
     
     # Simulate option prices and store in data frame.
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         #product = BinaryOption(T,strike,10,OptionType.CALL)
         
         #product_deriv = BarrierOption(100, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,True,10)
-        underlying=Bond(0.0,2.0)
+        underlying=Bond(startdate=0.0,maturity=2.0,notional=1.0,tenor=2.0, pays_notional=True, fixed_rate=0.0)
         product_deriv = EuropeanOption(underlying=underlying,exercise_date=T_fixed,strike=0.5,option_type=OptionType.CALL)
         #product_deriv=BinaryOption(2.0,100,10,OptionType.CALL)
         

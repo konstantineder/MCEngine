@@ -1,6 +1,6 @@
 from products.product import *
 from maths.maths import compute_degree_of_truth
-from request_interface.request_interface import RequestType, AtomicRequest
+from request_interface.request_interface import AtomicRequestType, AtomicRequest
 import numpy as np
 from collections import defaultdict
 
@@ -26,16 +26,16 @@ class BarrierOption(Product):
         self.use_seed = use_seed
         self.rng = np.random.default_rng(use_seed)
 
-        self.numeraire_requests={idx: AtomicRequest(RequestType.NUMERAIRE,t) for idx, t in enumerate(self.modeling_timeline)}
-        self.spot_requests={idx: AtomicRequest(RequestType.SPOT) for idx in range(len(self.modeling_timeline))}
+        self.numeraire_requests={idx: AtomicRequest(AtomicRequestType.NUMERAIRE,t) for idx, t in enumerate(self.modeling_timeline)}
+        self.spot_requests={idx: AtomicRequest(AtomicRequestType.SPOT) for idx in range(len(self.modeling_timeline))}
 
-    def get_requests(self):
-        requests=defaultdict(set)
+    def get_atomic_requests(self):
+        requests=defaultdict(list)
         for t, req in self.numeraire_requests.items():
-            requests[t].add(req)
+            requests[t].append(req)
 
         for t, req in self.spot_requests.items():
-            requests[t].add(req)
+            requests[t].append(req)
 
         return requests
 
@@ -147,10 +147,10 @@ class BarrierOption(Product):
         return torch.full((num_paths,), 0, dtype=torch.long, device=device)
     
     def compute_normalized_cashflows(self, time_idx, model, resolved_requests, regression_monomials=None, state=None):
-        spots=torch.stack([resolved_requests[self.spot_requests[idx].handle] for idx in range(len(self.modeling_timeline))], dim=1)
+        spots=torch.stack([resolved_requests[0][self.spot_requests[idx].handle] for idx in range(len(self.modeling_timeline))], dim=1)
         cfs = self.payoff(spots,model)
 
-        numeraire=resolved_requests[self.numeraire_requests[len(self.product_timeline)-1].handle]
+        numeraire=resolved_requests[0][self.numeraire_requests[len(self.product_timeline)-1].handle]
         normalized_cfs=cfs/numeraire
 
         return state, normalized_cfs

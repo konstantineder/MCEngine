@@ -4,12 +4,12 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from controller.controller import SimulationController
-from models.vasicek import *
-from metrics.pfe_metric import *
-from metrics.epe_metric import *
-from products.european_option import *
-from products.swap import InterestRateSwap
-from engine.engine import *
+from models.vasicek import VasicekModel
+from metrics.pfe_metric import PFEMetric
+from metrics.epe_metric import EPEMetric
+from products.european_option import EuropeanOption, OptionType
+from products.swap import InterestRateSwap, IRSType
+from engine.engine import SimulationScheme
 
 
 if __name__ == "__main__":
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     maturity = 3.0
     strike = 100.0
 
-    underlying=InterestRateSwap(fixed_rate=0.03,startdate=0.,enddate=2.,tenor=0.25)
+    underlying=InterestRateSwap(startdate=0.0,enddate=2.0, notional=1.0,fixed_rate=0.03,tenor_fixed=0.25, tenor_float=0.25,irs_type=IRSType.RECEIVER)
     product = EuropeanOption(underlying=underlying,exercise_date=1.5,strike=0.0,option_type=OptionType.CALL)
     #product = BarrierOption(strike, 120,BarrierOptionType.UPANDOUT,0.0,2.0,OptionType.CALL,10)
     #product = BermudanOption(maturity=maturity, exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
@@ -39,10 +39,10 @@ if __name__ == "__main__":
 
     metrics=[ee_metric, pfe_metric]
 
-    num_paths_mainsim=100000
+    num_paths_mainsim=10000
     num_paths_presim=10000
-    num_steps=50
-    sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.ANALYTICAL, False, exposure_timeline)
+    num_steps=1
+    sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.EULER, False, exposure_timeline)
 
     sim_results=sc.run_simulation()
 
