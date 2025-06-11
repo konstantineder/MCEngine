@@ -1,15 +1,8 @@
 from context import *
 
 import torch
-from enum import Enum, auto
 import numpy as np
-import pandas as pd
-from IPython.display import display
 import matplotlib.pyplot as plt
-from itertools import product as cartesian_product
-from mpl_toolkits.mplot3d import Axes3D
-from itertools import groupby
-from operator import itemgetter
 from controller.controller import SimulationController
 from models.black_scholes import *
 from metrics.pfe_metric import *

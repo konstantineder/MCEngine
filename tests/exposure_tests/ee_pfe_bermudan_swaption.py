@@ -2,15 +2,14 @@ from context import *
 
 import torch
 import numpy as np
-from IPython.display import display
 import matplotlib.pyplot as plt
 from controller.controller import SimulationController
-from models.vasicek import *
-from metrics.pfe_metric import *
-from metrics.epe_metric import *
+from models.vasicek import VasicekModel
+from metrics.pfe_metric import PFEMetric
+from metrics.epe_metric import EPEMetric
 from products.bermudan_option import BermudanOption, OptionType
 from products.swap import InterestRateSwap, IRSType
-from engine.engine import *
+from engine.engine import SimulationScheme
 
 
 if __name__ == "__main__":

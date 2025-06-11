@@ -5,13 +5,14 @@ from collections import defaultdict
 
 # AAD-compatible European option
 class Bond(Product):
-    def __init__(self, startdate, maturity, notional, tenor, fixed_rate=None):
+    def __init__(self, startdate, maturity, notional, tenor, pays_notional=True, fixed_rate=None):
         super().__init__()
         self.startdate = torch.tensor([startdate], dtype=torch.float64,device=device)
         self.maturity = torch.tensor([maturity], dtype=torch.float64,device=device)
         self.notional = torch.tensor([notional], dtype=torch.float64, device=device)
         self.tenor = torch.tensor([tenor], dtype=torch.float64, device=device)
         self.fixed_rate = fixed_rate
+        self.pays_notional=pays_notional
         self.composite_req_handle=None
 
         self.payment_dates = []
@@ -61,7 +62,8 @@ class Bond(Product):
             torch.equal(self.startdate, other.startdate) and
             torch.equal(self.maturity, other.maturity) and
             torch.equal(self.tenor, other.tenor) and
-            self.fixed_rate == other.fixed_rate
+            self.fixed_rate == other.fixed_rate and
+            self.pays_notional == other.pays_notional
         )
 
     def __hash__(self):
@@ -70,6 +72,7 @@ class Bond(Product):
             self.maturity.item(),
             self.tenor.item(),
             self.fixed_rate,
+            self.pays_notional
         ))
     
     def get_requests(self):
@@ -93,7 +96,7 @@ class Bond(Product):
         return requests
     
     def generate_composite_requests(self, observation_date):
-        bond = Bond(observation_date,self.maturity.item(),self.notional.item(),self.tenor.item(),self.fixed_rate)
+        bond = Bond(observation_date,self.maturity.item(),self.notional.item(),self.tenor.item(),self.pays_notional,self.fixed_rate)
         return CompositeRequest(bond)
     
     def get_composite_requests(self):
@@ -106,7 +109,7 @@ class Bond(Product):
             return self.get_value_float(resolved_atomic_requests)
 
     def get_value_fixed(self, resolved_atomic_requests):
-        total_value = torch.zeros_like(resolved_atomic_requests[0], dtype=torch.float64, device=device)
+        total_cashflow = torch.zeros_like(resolved_atomic_requests[0], dtype=torch.float64, device=device)
 
         prev_time=self.startdate
         for t in self.numeraire_requests.keys():
@@ -117,15 +120,19 @@ class Bond(Product):
             time=self.modeling_timeline[t]
             dt=time - prev_time
 
-            cashflow_value = self.notional * self.fixed_rate * dt * discount
-            total_value += cashflow_value
+            total_cashflow += self.notional * self.fixed_rate * dt * discount
 
             prev_time=time
+        
+        if self.pays_notional:
+            discount_req = self.composite_requests[len(self.modeling_timeline) - 1]
+            discount = resolved_atomic_requests[discount_req.handle]
+            total_cashflow += self.notional * discount
 
-        return total_value
+        return total_cashflow
     
     def get_value_float(self, resolved_atomic_requests):
-        total_value = torch.zeros_like(resolved_atomic_requests[0], dtype=torch.float64, device=device)
+        total_cashflow = torch.zeros_like(resolved_atomic_requests[0], dtype=torch.float64, device=device)
 
         for t in self.numeraire_requests.keys():
             discount_req = self.composite_requests[t]
@@ -134,10 +141,14 @@ class Bond(Product):
             discount = resolved_atomic_requests[discount_req.handle]
             discount_next = resolved_atomic_requests[discount_next_req.handle]
 
-            cashflow_value = self.notional * discount - discount_next
-            total_value += cashflow_value
+            total_cashflow += self.notional * (discount - discount_next)
 
-        return total_value
+        if self.pays_notional:
+            discount_req = self.composite_requests[len(self.modeling_timeline) - 1]
+            discount = resolved_atomic_requests[discount_req.handle]
+            total_cashflow += self.notional * discount
+
+        return total_cashflow
     
     def compute_normalized_cashflows(self, time_idx, model, resolved_requests,regression_monomials=None, state=None):
         if self.fixed_rate is not None:
@@ -154,10 +165,13 @@ class Bond(Product):
 
         dt=self.payment_dates[time_idx] - prev_time
 
-        fixed_leg = self.fixed_rate * dt
-        cashflow = fixed_leg / numeraire
+        cashflow = self.fixed_rate * dt
 
-        return state, cashflow
+        if self.pays_notional and time_idx == len(self.modeling_timeline):
+            cashflow+=self.notional
+
+        discounted_cashflow = cashflow / numeraire
+        return state, discounted_cashflow
     
     def compute_normalized_cashflows_float(self, time_idx, model, resolved_requests,regression_monomials=None, state=None):
         libor_rate = resolved_requests[0][self.libor_requests[time_idx].handle]
@@ -169,7 +183,10 @@ class Bond(Product):
 
         dt=self.payment_dates[time_idx] - prev_time
 
-        float_leg = libor_rate * dt
-        cashflow = float_leg/numeraire
+        cashflow = libor_rate * dt
 
-        return state, cashflow
+        if self.pays_notional and time_idx == len(self.modeling_timeline):
+            cashflow+=self.notional
+
+        discounted_cashflow = cashflow / numeraire
+        return state, discounted_cashflow

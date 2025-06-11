@@ -19,8 +19,8 @@ class InterestRateSwap(Product):
         self.tenor_float = tenor_float
         self.irs_type = irs_type
 
-        self.fixed_leg = Bond(startdate=startdate,maturity=enddate,notional=notional,tenor=tenor_fixed,fixed_rate=fixed_rate)
-        self.floating_leg = Bond(startdate=startdate,maturity=enddate,notional=notional,tenor=tenor_float)
+        self.fixed_leg = Bond(startdate=startdate,maturity=enddate,notional=notional,tenor=tenor_fixed,pays_notional=False,fixed_rate=fixed_rate)
+        self.floating_leg = Bond(startdate=startdate,maturity=enddate,notional=notional,pays_notional=False,tenor=tenor_float)
 
         fixed_times = {float(t.item()) for t in self.fixed_leg.modeling_timeline}
         float_times = {float(t.item()) for t in self.floating_leg.modeling_timeline}

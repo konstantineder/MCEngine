@@ -4,12 +4,12 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from controller.controller import SimulationController
-from models.vasicek import *
-from metrics.pfe_metric import *
-from metrics.epe_metric import *
-from metrics.ene_metric import *
+from models.vasicek import VasicekModel
+from metrics.pfe_metric import PFEMetric
+from metrics.epe_metric import EPEMetric
+from metrics.ene_metric import ENEMetric
 from products.swap import InterestRateSwap, IRSType
-from engine.engine import *
+from engine.engine import SimulationScheme
 
 
 if __name__ == "__main__":
@@ -58,7 +58,7 @@ if __name__ == "__main__":
     ax1.plot(exposure_timeline, ees_irs1, label='EPE (IRS1)', color='red')
     ax1.plot(exposure_timeline, enes_irs1, label='ENE (IRS1)', color='orange')
     ax1.plot(exposure_timeline, pfes_irs1, label='PFE (IRS1)', color='blue', linestyle='--')
-    ax1.set_title('Exposure Metrics for IRS1')
+    ax1.set_title('Expected and Potential Future Exposure for IRS1')
     ax1.set_xlabel('Time')
     ax1.set_ylabel('Exposure')
     ax1.grid(True, linestyle='--', alpha=0.7)

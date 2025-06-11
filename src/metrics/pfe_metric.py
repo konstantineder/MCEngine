@@ -13,6 +13,6 @@ class PFEMetric(Metric):
         pfes=[]
         index = int(np.ceil(self.quantile * exposures[0].shape[0])) - 1
         for e in exposures:
-            sorted_vals = torch.relu(e).sort().values
+            sorted_vals = e.sort().values
             pfes.append(sorted_vals[index])
         return pfes  # Return for each time point
