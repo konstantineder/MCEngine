@@ -1,5 +1,5 @@
 from products.product import *
-from request_interface.request_interface import RequestType, AtomicRequest
+from request_interface.request_interface import AtomicRequestType, AtomicRequest
 import numpy as np
 from collections import defaultdict
 
@@ -17,30 +17,30 @@ class BermudanOption:
         ]
         self.num_exercise_rights = 1
 
-        self.numeraire_requests={idx: AtomicRequest(RequestType.NUMERAIRE,t) for idx, t in enumerate(self.modeling_timeline)}
-        self.spot_requests={idx: AtomicRequest(RequestType.SPOT) for idx in range(len(self.modeling_timeline))}
+        self.numeraire_requests={idx: AtomicRequest(AtomicRequestType.NUMERAIRE,t) for idx, t in enumerate(self.modeling_timeline)}
+        self.spot_requests={idx: AtomicRequest(AtomicRequestType.SPOT) for idx in range(len(self.modeling_timeline))}
 
         self.underlying_requests={}
         idx=0
         for exercise_date in exercise_dates:
-            self.underlying_requests[idx]=underlying.generate_composite_requests(exercise_date)
+            self.underlying_requests[idx]=underlying.generate_composite_requests_for_date(exercise_date)
             idx+=1
 
-    def get_requests(self):
-        requests=defaultdict(set)
+    def get_atomic_requests(self):
+        requests=defaultdict(list)
         for t, req in self.numeraire_requests.items():
-            requests[t].add(req)
+            requests[t].append(req)
 
         for t, req in self.spot_requests.items():
-            requests[t].add(req)
+            requests[t].append(req)
 
         return requests
     
     
     def get_composite_requests(self):
-        requests=defaultdict(set)
+        requests=defaultdict(list)
         for t, req in self.underlying_requests.items():
-            requests[t].add(req)
+            requests[t].append(req)
 
         return requests
 

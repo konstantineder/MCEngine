@@ -1,6 +1,6 @@
 from products.product import *
 from products.bond import Bond
-from request_interface.request_interface import RequestType, CompositeRequest, AtomicRequest
+from request_interface.request_interface import AtomicRequestType, CompositeRequest, AtomicRequest
 from collections import defaultdict
 
 class IRSType(Enum):
@@ -51,43 +51,40 @@ class InterestRateSwap(Product):
             self.tenor_float
         ))
 
-    def get_requests(self):
+    def get_atomic_requests(self):
         requests = defaultdict(list)
 
-        fixed_reqs = self.fixed_leg.get_requests()
+        fixed_reqs = self.fixed_leg.get_atomic_requests()
         for t, reqs in fixed_reqs.items():
             for req in reqs:
                 requests[t].append(req)
 
-        float_reqs = self.floating_leg.get_requests()
+        float_reqs = self.floating_leg.get_atomic_requests()
         for t, reqs in float_reqs.items():
             for req in reqs:
                 requests[t].append(req)
 
         return requests
 
-    def get_atomic_requests(self):
+    def get_atomic_requests_for_underlying(self):
         # Update time1 for composite requests with the observation_date
         atomic_requests = defaultdict(list)
 
-        fixed_reqs = self.fixed_leg.get_atomic_requests()
+        fixed_reqs = self.fixed_leg.get_atomic_requests_for_underlying()
         for t, reqs in fixed_reqs.items():
             for req in reqs:
                 atomic_requests[t].append(req)
 
-        float_reqs = self.floating_leg.get_atomic_requests()
+        float_reqs = self.floating_leg.get_atomic_requests_for_underlying()
         for t, reqs in float_reqs.items():
             for req in reqs:
                 atomic_requests[t].append(req)
 
         return atomic_requests
     
-    def generate_composite_requests(self, observation_date):
+    def generate_composite_requests_for_date(self, observation_date):
         swap=InterestRateSwap(observation_date,self.enddate,self.notional,self.fixed_rate,self.tenor_fixed,self.tenor_float,self.irs_type)
         return CompositeRequest(swap)
-
-    def get_composite_requests(self):
-        return defaultdict(set)
             
     def get_value(self, resolved_atomic_requests):
         """

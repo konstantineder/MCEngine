@@ -9,6 +9,7 @@ from controller.controller import SimulationController
 from models.black_scholes import BlackScholesModel
 from metrics.pv_metric import PVMetric
 from products.bermudan_option import AmericanOption, OptionType
+from products.equity import Equity
 from engine.engine import SimulationScheme
 
 
@@ -39,7 +40,9 @@ if __name__ == "__main__":
 
         for T, S0, sigma, rate, strike in param_grid:
             model = BlackScholesModel(0, S0, rate, sigma)
-            product = AmericanOption(T,10,strike,OptionType.PUT)
+
+            underlying =Equity('id')
+            product = AmericanOption(underlying,T,10,strike,OptionType.PUT)
 
             portfolio = [product]
             metrics=[PVMetric()]
@@ -75,7 +78,7 @@ if __name__ == "__main__":
     # defining the parameter grid
     param_grid = list(cartesian_product(T_vals,S0_vals, sigma_vals, r_vals, strikes))
 
-    num_paths_main_sim = 100000
+    num_paths_main_sim = 10000
     num_paths_pre_sim = 10000
     steps = 1
     
@@ -88,7 +91,8 @@ if __name__ == "__main__":
         spot, rate, vola = args
         model_deriv = BlackScholesModel(0, spot, rate, vola)
 
-        product_deriv = AmericanOption(1.0,10,100,OptionType.PUT)
+        underlying =Equity('id')
+        product_deriv = AmericanOption(underlying,1.0,10,100,OptionType.PUT)
 
         portfolio = [product_deriv]
         metrics=[PVMetric()]

@@ -2,14 +2,14 @@ from context import *
 
 import torch
 import numpy as np
-from IPython.display import display
 import matplotlib.pyplot as plt
 from controller.controller import SimulationController
-from models.black_scholes import *
-from metrics.pfe_metric import *
-from metrics.epe_metric import *
-from products.bermudan_option import *
-from engine.engine import *
+from models.black_scholes import BlackScholesModel
+from metrics.pfe_metric import PFEMetric
+from metrics.epe_metric import EPEMetric
+from products.bermudan_option import AmericanOption, OptionType
+from products.equity import Equity 
+from engine.engine import SimulationScheme
 
 
 if __name__ == "__main__":
@@ -21,11 +21,12 @@ if __name__ == "__main__":
 
 
     model = BlackScholesModel(calibration_date=0.0, spot=100, rate=0.05, sigma=0.5)
-    num_exercise_dates=1
+    num_exercise_dates=100
     maturity = 3.0
     strike = 100.0
 
-    product = AmericanOption(maturity=maturity, num_exercise_dates=num_exercise_dates, strike=strike, option_type=OptionType.CALL)
+    underlying = Equity('id')
+    product = AmericanOption(underlying=underlying,maturity=maturity, num_exercise_dates=num_exercise_dates, strike=strike, option_type=OptionType.CALL)
 
     portfolio=[product]
 
@@ -36,7 +37,7 @@ if __name__ == "__main__":
 
     metrics=[ee_metric, pfe_metric]
 
-    num_paths_mainsim=100000
+    num_paths_mainsim=10000
     num_paths_presim=10000
     num_steps=1
     sc=SimulationController(portfolio, model, metrics, num_paths_mainsim, num_paths_presim, num_steps, SimulationScheme.ANALYTICAL, False, exposure_timeline)

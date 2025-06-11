@@ -4,7 +4,7 @@ from operator import itemgetter
 import torch
 import numpy as np
 from engine.engine import MonteCarloEngine
-from request_interface.request_interface import RequestInterface, AtomicRequest, RequestType
+from request_interface.request_interface import RequestInterface, AtomicRequest, AtomicRequestType
 from metrics.metric import MetricType, Metric
 from enum import Enum, auto
 from collections import defaultdict
@@ -72,8 +72,8 @@ class SimulationController:
             for prod in portfolio
         ]
 
-        self.numeraire_requests = {idx: AtomicRequest(RequestType.NUMERAIRE, t) for idx, t in enumerate(exposure_timeline)}
-        self.spot_requests = {idx: AtomicRequest(RequestType.SPOT) for idx in range(len(exposure_timeline))}
+        self.numeraire_requests = {idx: AtomicRequest(AtomicRequestType.NUMERAIRE, t) for idx, t in enumerate(exposure_timeline)}
+        self.spot_requests = {idx: AtomicRequest(AtomicRequestType.SPOT) for idx in range(len(exposure_timeline))}
 
         prod_times = {float(t.item()) for prod in self.portfolio for t in prod.modeling_timeline}
         exposure_times = {float(t.item()) for t in exposure_timeline}
@@ -148,7 +148,7 @@ class SimulationController:
                     total_cfs[:, 0] = cf_cache[last_cf_index_computed][:, 0]
                     for idx in range(t_next_idx, last_cf_index_computed):
                         _, cfs = product.compute_normalized_cashflows(
-                            idx, self.model.get_model_params(), resolved_requests, self.regression_monomials
+                            idx, self.model, resolved_requests, self.regression_monomials
                         )
                         total_cfs[:, 0] += cfs
 

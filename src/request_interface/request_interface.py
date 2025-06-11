@@ -2,7 +2,7 @@ from enum import Enum
 from common.packages import *
 from collections import defaultdict
 
-class RequestType(Enum):
+class AtomicRequestType(Enum):
     SPOT=1
     DISCOUNT_FACTOR = 2
     NUMERAIRE = 3
@@ -40,7 +40,7 @@ class CompositeRequest:
         return self.underlying_asset.composite_req_handle
 
     def get_atomic_requests(self):
-        return self.underlying_asset.get_atomic_requests()
+        return self.underlying_asset.get_atomic_requests_for_underlying()
 
     def get_value(self,resolved_atomic_requests):
         return self.underlying_asset.get_value(resolved_atomic_requests)
@@ -97,7 +97,7 @@ class RequestInterface:
 
         # From products
         for prod in products:
-            requests = prod.get_requests()
+            requests = prod.get_atomic_requests()
             for t, reqs in requests.items():
                 time_index = time_to_index[float(prod.modeling_timeline[t])]
                 for req in reqs:

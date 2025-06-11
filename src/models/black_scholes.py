@@ -1,5 +1,5 @@
 from models.model import *
-from request_interface.request_interface import RequestType
+from request_interface.request_interface import AtomicRequestType
 
 # AAD-enabled Black-Scholes model
 class BlackScholesModel(Model):
@@ -71,23 +71,23 @@ class BlackScholesModel(Model):
     
     def resolve_request(self, req, state):
 
-        if req.request_type == RequestType.SPOT:
+        if req.request_type == AtomicRequestType.SPOT:
             return state
-        elif req.request_type == RequestType.DISCOUNT_FACTOR:
+        elif req.request_type == AtomicRequestType.DISCOUNT_FACTOR:
             t = req.time1
             rate=self.get_rate()
             return torch.exp(-rate * (t - self.calibration_date))
-        elif req.request_type == RequestType.FORWARD_RATE:
+        elif req.request_type == AtomicRequestType.FORWARD_RATE:
             t1 = req.time1
             t2 = req.time2
             rate=self.get_rate()
             return torch.exp(rate * (t2-t1))
-        elif req.request_type == RequestType.LIBOR_RATE:
+        elif req.request_type == AtomicRequestType.LIBOR_RATE:
             t1 = req.time1
             t2 = req.time2
             rate=self.get_rate()
             return (torch.exp(rate * (t2-t1))-1)/(t2-t1)
-        elif req.request_type == RequestType.NUMERAIRE:
+        elif req.request_type == AtomicRequestType.NUMERAIRE:
             t = req.time1
             rate=self.get_rate()
             return torch.exp(rate * (t - self.calibration_date))

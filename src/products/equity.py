@@ -1,6 +1,6 @@
 from products.product import *
 from math import pi
-from request_interface.request_interface import RequestType, CompositeRequest, AtomicRequest
+from request_interface.request_interface import AtomicRequestType, CompositeRequest, AtomicRequest
 from collections import defaultdict
 
 # AAD-compatible European option
@@ -10,7 +10,7 @@ class Equity(Product):
         self.id=id
         self.composite_req_handle=None
 
-        self.spot_requests={0: AtomicRequest(RequestType.SPOT)}
+        self.spot_requests={0: AtomicRequest(AtomicRequestType.SPOT)}
 
     def __eq__(self, other):
         return isinstance(other, Equity) and self.id == other.id
@@ -18,21 +18,17 @@ class Equity(Product):
     def __hash__(self):
         return hash(self.id)
     
-    def get_atomic_requests(self):
-        requests=defaultdict(set)
+    def get_atomic_requests_for_underlying(self):
+        requests=defaultdict(list)
 
         for t, req in self.spot_requests.items():
-            requests[t].add(req)
+            requests[t].append(req)
 
         return requests
     
-    def generate_composite_requests(self, obervation_date):
+    def generate_composite_requests_for_date(self, obervation_date):
         equity=Equity(self.id)
         return CompositeRequest(equity)
-    
-    def get_composite_requests(self):
-        return defaultdict(set)
-
     
     def get_value(self, resolved_atomic_requests):
         return resolved_atomic_requests[self.spot_requests[0].handle]

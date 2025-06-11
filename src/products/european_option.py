@@ -1,6 +1,6 @@
 from products.product import *
 from math import pi
-from request_interface.request_interface import RequestType, CompositeRequest, AtomicRequest
+from request_interface.request_interface import AtomicRequestType, CompositeRequest, AtomicRequest
 from collections import defaultdict
 
 # AAD-compatible European option
@@ -15,20 +15,20 @@ class EuropeanOption(Product):
         self.regression_timeline=torch.tensor([], dtype=torch.float64,device=device)
         self.underlying=underlying
 
-        self.numeraire_requests={0: AtomicRequest(RequestType.NUMERAIRE,exercise_date)}
-        self.underlying_request={0: underlying.generate_composite_requests(exercise_date)}
+        self.numeraire_requests={0: AtomicRequest(AtomicRequestType.NUMERAIRE,exercise_date)}
+        self.underlying_request={0: underlying.generate_composite_requests_for_date(exercise_date)}
     
-    def get_requests(self):
-        requests=defaultdict(set)
+    def get_atomic_requests(self):
+        requests=defaultdict(list)
         for t, req in self.numeraire_requests.items():
-            requests[t].add(req)
+            requests[t].append(req)
 
         return requests
     
     def get_composite_requests(self):
-        comp_requests=defaultdict(set)
+        comp_requests=defaultdict(list)
         for time, comp_req in self.underlying_request.items():
-            comp_requests[time].add(comp_req)
+            comp_requests[time].append(comp_req)
 
         return comp_requests
 

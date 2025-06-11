@@ -1,6 +1,6 @@
 from products.product import *
 from math import pi
-from request_interface.request_interface import RequestType, CompositeRequest, AtomicRequest
+from request_interface.request_interface import AtomicRequestType, CompositeRequest, AtomicRequest
 from collections import defaultdict
 
 # AAD-compatible European option
@@ -17,7 +17,7 @@ class Bond(Product):
 
         self.payment_dates = []
         self.libor_requests = {}   # LIBOR forward rates as composite requests
-        self.composite_requests = {}
+        self.underlying_requests = {}
         self.numeraire_requests = {}   # For discounting each payment
 
         # Build the payment schedule and requests
@@ -26,30 +26,30 @@ class Bond(Product):
 
         if fixed_rate is not None:
             while date < maturity:
-                self.numeraire_requests[idx] = AtomicRequest(RequestType.NUMERAIRE, date)
-                self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=date)
+                self.numeraire_requests[idx] = AtomicRequest(AtomicRequestType.NUMERAIRE, date)
+                self.underlying_requests[idx] = AtomicRequest(request_type=AtomicRequestType.FORWARD_RATE,time1=startdate,time2=date)
                 self.payment_dates.append(date)
                 date += tenor
                 idx += 1
 
             # Final payment at maturity
-            self.numeraire_requests[idx] = AtomicRequest(RequestType.DISCOUNT_FACTOR, maturity)
-            self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=maturity)
+            self.numeraire_requests[idx] = AtomicRequest(AtomicRequestType.DISCOUNT_FACTOR, maturity)
+            self.underlying_requests[idx] = AtomicRequest(request_type=AtomicRequestType.FORWARD_RATE,time1=startdate,time2=maturity)
             self.payment_dates.append(maturity)
         else:
             while date < maturity:
-                self.libor_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, date)
-                self.numeraire_requests[idx] = AtomicRequest(RequestType.NUMERAIRE, date)
-                self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=date-tenor)
+                self.libor_requests[idx] = AtomicRequest(AtomicRequestType.LIBOR_RATE, date - tenor, date)
+                self.numeraire_requests[idx] = AtomicRequest(AtomicRequestType.NUMERAIRE, date)
+                self.underlying_requests[idx] = AtomicRequest(request_type=AtomicRequestType.FORWARD_RATE,time1=startdate,time2=date-tenor)
                 self.payment_dates.append(date)
                 date += tenor
                 idx += 1
 
             # Final payment at maturity
-            self.libor_requests[idx] = AtomicRequest(RequestType.LIBOR_RATE, date - tenor, maturity)
-            self.numeraire_requests[idx] = AtomicRequest(RequestType.DISCOUNT_FACTOR, maturity)
-            self.composite_requests[idx] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=date-tenor)
-            self.composite_requests[idx + 1] = AtomicRequest(request_type=RequestType.FORWARD_RATE,time1=startdate,time2=maturity)
+            self.libor_requests[idx] = AtomicRequest(AtomicRequestType.LIBOR_RATE, date - tenor, maturity)
+            self.numeraire_requests[idx] = AtomicRequest(AtomicRequestType.DISCOUNT_FACTOR, maturity)
+            self.underlying_requests[idx] = AtomicRequest(request_type=AtomicRequestType.FORWARD_RATE,time1=startdate,time2=date-tenor)
+            self.underlying_requests[idx + 1] = AtomicRequest(request_type=AtomicRequestType.FORWARD_RATE,time1=startdate,time2=maturity)
             self.payment_dates.append(maturity)
 
         self.payment_dates = torch.tensor(self.payment_dates, dtype=torch.float64, device=device)
@@ -75,7 +75,7 @@ class Bond(Product):
             self.pays_notional
         ))
     
-    def get_requests(self):
+    def get_atomic_requests(self):
         requests=defaultdict(list)
 
         for t, req in self.numeraire_requests.items():
@@ -87,20 +87,17 @@ class Bond(Product):
 
         return requests
     
-    def get_atomic_requests(self):
+    def get_atomic_requests_for_underlying(self):
         requests=defaultdict(list)
 
-        for t, req in self.composite_requests.items():
+        for t, req in self.underlying_requests.items():
             requests[t].append(req)
 
         return requests
     
-    def generate_composite_requests(self, observation_date):
+    def generate_composite_requests_for_date(self, observation_date):
         bond = Bond(observation_date,self.maturity.item(),self.notional.item(),self.tenor.item(),self.pays_notional,self.fixed_rate)
         return CompositeRequest(bond)
-    
-    def get_composite_requests(self):
-        return defaultdict(set)
     
     def get_value(self, resolved_atomic_requests):
         if self.fixed_rate is not None:
@@ -113,7 +110,7 @@ class Bond(Product):
 
         prev_time=self.startdate
         for t in self.numeraire_requests.keys():
-            discount_req = self.composite_requests[t]
+            discount_req = self.underlying_requests[t]
 
             discount = resolved_atomic_requests[discount_req.handle]
 
@@ -125,7 +122,7 @@ class Bond(Product):
             prev_time=time
         
         if self.pays_notional:
-            discount_req = self.composite_requests[len(self.modeling_timeline) - 1]
+            discount_req = self.underlying_requests[len(self.modeling_timeline) - 1]
             discount = resolved_atomic_requests[discount_req.handle]
             total_cashflow += self.notional * discount
 
@@ -135,8 +132,8 @@ class Bond(Product):
         total_cashflow = torch.zeros_like(resolved_atomic_requests[0], dtype=torch.float64, device=device)
 
         for t in self.numeraire_requests.keys():
-            discount_req = self.composite_requests[t]
-            discount_next_req = self.composite_requests[t+1]
+            discount_req = self.underlying_requests[t]
+            discount_next_req = self.underlying_requests[t+1]
 
             discount = resolved_atomic_requests[discount_req.handle]
             discount_next = resolved_atomic_requests[discount_next_req.handle]
@@ -144,7 +141,7 @@ class Bond(Product):
             total_cashflow += self.notional * (discount - discount_next)
 
         if self.pays_notional:
-            discount_req = self.composite_requests[len(self.modeling_timeline) - 1]
+            discount_req = self.underlying_requests[len(self.modeling_timeline) - 1]
             discount = resolved_atomic_requests[discount_req.handle]
             total_cashflow += self.notional * discount
 

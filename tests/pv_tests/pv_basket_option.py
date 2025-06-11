@@ -33,19 +33,6 @@ if __name__ == "__main__":
         if denom < eps:
             return 0.0
         return 2 * abs(x - y) / denom
-    
-    def compute_sigmas_and_correlation_from_cholesky(L):
-        # Step 1: Compute covariance matrix Σ = L @ L.T
-        cov_matrix = L @ L.T
-
-        # Step 2: Extract sigmas from diagonal (standard deviations)
-        sigmas = np.sqrt(np.diag(cov_matrix))
-
-        # Step 3: Compute correlation matrix: ρ_ij = Σ_ij / (σ_i * σ_j)
-        denom = np.outer(sigmas, sigmas)
-        correlation_matrix = cov_matrix / denom
-
-        return sigmas, correlation_matrix
 
 
     def compute_prices_for_grid(param_grid,weights,correlation_matrix, num_paths, steps):
@@ -108,7 +95,7 @@ if __name__ == "__main__":
     basket=BasketOption(1.0,weights,100,OptionType.CALL,BasketOptionType.ARITHMETIC,True)
     basket_geo=BasketOption(1.0,weights,100,OptionType.CALL,BasketOptionType.GEOMETRIC)
 
-    num_paths = 100000
+    num_paths = 1000000
     steps = 1
 
     sc=SimulationController([basket,basket_geo], model, [PVMetric()], num_paths, 0, steps, SimulationScheme.ANALYTICAL, False)
@@ -126,6 +113,7 @@ if __name__ == "__main__":
     # Simulate option prices and store in data frame.
     # Since only spot price and time to maturity are varied
     # the rate and volatility will be filtered out
+    num_paths = 10000
     df_results_spot_maturity=compute_prices_for_grid(param_grid,weights,correlation_matrix,num_paths,steps).drop(columns=["rate", "vola"])
     
     def compute_pv_analytically_wrapper(args):
