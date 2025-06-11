@@ -249,6 +249,20 @@ class SimulationController:
             result=self.evaluate_product(product,resolved_requests)
             results.append(result)
 
+        # import concurrent.futures
+
+        # results_by_id = {}
+
+        # with concurrent.futures.ProcessPoolExecutor() as executor:
+        #     futures = {
+        #         executor.submit(self.evaluate_product, product, resolved_requests): product.product_id
+        #         for product in self.portfolio
+        #     }
+
+        #     for future in concurrent.futures.as_completed(futures):
+        #         product_id = futures[future]
+        #         results_by_id[product_id] = future.result()
+
         grads = []
         higher_grads = []
         if self.differentiate:

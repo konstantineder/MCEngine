@@ -10,6 +10,6 @@ class ENEMetric(Metric):
     def evaluate_numerically(self, exposures,cfs):
         expected_exposures=[]
         for e in exposures:
-            ee = torch.relu(-e).mean()
+            ee = -torch.relu(-e).mean()
             expected_exposures.append(ee)
         return expected_exposures

@@ -7,6 +7,7 @@ from controller.controller import SimulationController
 from models.vasicek import *
 from metrics.pfe_metric import *
 from metrics.epe_metric import *
+from metrics.ene_metric import *
 from products.swap import InterestRateSwap, IRSType
 from engine.engine import *
 
@@ -33,10 +34,11 @@ if __name__ == "__main__":
 
     # Metric timeline for EE
     exposure_timeline = np.linspace(0, 3.,100)
-    ee_metric = EPEMetric()
+    epe_metric = EPEMetric()
+    ene_metric = ENEMetric()
     pfe_metric = PFEMetric(0.9)
 
-    metrics=[ee_metric, pfe_metric]
+    metrics=[epe_metric, ene_metric, pfe_metric]
 
     num_paths_mainsim=10000
     num_paths_presim=10000
@@ -46,13 +48,15 @@ if __name__ == "__main__":
     sim_results=sc.run_simulation()
 
     ees_irs1=sim_results.get_results(0,0)
+    enes_irs1=sim_results.get_results(0,1)
     ees_irs2=sim_results.get_results(1,0)
-    pfes_irs1=sim_results.get_results(0,1)
+    pfes_irs1=sim_results.get_results(0,2)
 
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
 
     # Plot for IRS1
-    ax1.plot(exposure_timeline, ees_irs1, label='EE (IRS1)', color='red')
+    ax1.plot(exposure_timeline, ees_irs1, label='EPE (IRS1)', color='red')
+    ax1.plot(exposure_timeline, enes_irs1, label='ENE (IRS1)', color='orange')
     ax1.plot(exposure_timeline, pfes_irs1, label='PFE (IRS1)', color='blue', linestyle='--')
     ax1.set_title('Exposure Metrics for IRS1')
     ax1.set_xlabel('Time')

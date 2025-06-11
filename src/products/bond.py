@@ -61,7 +61,7 @@ class Bond(Product):
             torch.equal(self.startdate, other.startdate) and
             torch.equal(self.maturity, other.maturity) and
             torch.equal(self.tenor, other.tenor) and
-            torch.equal(self.fixed_rate, other.fixed_rate)
+            self.fixed_rate == other.fixed_rate
         )
 
     def __hash__(self):
