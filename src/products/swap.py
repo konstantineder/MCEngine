@@ -3,8 +3,13 @@ from products.bond import Bond
 from request_interface.request_interface import RequestType, CompositeRequest, AtomicRequest
 from collections import defaultdict
 
+class IRSType(Enum):
+    PAYER = 0
+    RECEIVER = 1
+
+
 class InterestRateSwap(Product):
-    def __init__(self, startdate, enddate, notional, fixed_rate, tenor_fixed, tenor_float):
+    def __init__(self, startdate, enddate, notional, fixed_rate, tenor_fixed, tenor_float, irs_type):
         super().__init__()
         self.startdate = startdate
         self.enddate = enddate
@@ -12,6 +17,8 @@ class InterestRateSwap(Product):
         self.fixed_rate = fixed_rate
         self.tenor_fixed = tenor_fixed
         self.tenor_float = tenor_float
+        self.irs_type = irs_type
+
         self.fixed_leg = Bond(startdate=startdate,maturity=enddate,notional=notional,tenor=tenor_fixed,fixed_rate=fixed_rate)
         self.floating_leg = Bond(startdate=startdate,maturity=enddate,notional=notional,tenor=tenor_float)
 
@@ -76,7 +83,7 @@ class InterestRateSwap(Product):
         return atomic_requests
     
     def generate_composite_requests(self, observation_date):
-        swap=InterestRateSwap(observation_date,self.enddate,self.notional,self.fixed_rate,self.tenor_fixed,self.tenor_float)
+        swap=InterestRateSwap(observation_date,self.enddate,self.notional,self.fixed_rate,self.tenor_fixed,self.tenor_float,self.irs_type)
         return CompositeRequest(swap)
 
     def get_composite_requests(self):
@@ -91,7 +98,9 @@ class InterestRateSwap(Product):
         fixed_value = self.fixed_leg.get_value(resolved_atomic_requests)
         float_value = self.floating_leg.get_value(resolved_atomic_requests)
 
-        return fixed_value - float_value
+        total_value = float_value - fixed_value if self.irs_type == IRSType.RECEIVER else fixed_value - float_value
+
+        return  total_value
 
     def compute_normalized_cashflows(self, time_idx, model, resolved_requests, regression_monomials=None, state=None):
         total_value = torch.zeros_like(resolved_requests[0][0], dtype=torch.float64, device=device)
@@ -106,14 +115,14 @@ class InterestRateSwap(Product):
             _, fixed_cashflow = self.fixed_leg.compute_normalized_cashflows(
                 fixed_time_idx, model, resolved_requests, regression_monomials, state
             )
-            total_value += fixed_cashflow
 
         if time in self.floating_leg.modeling_timeline:
             float_time_idx = (self.floating_leg.modeling_timeline == time).nonzero(as_tuple=True)[0].item()
             _, float_cashflow = self.floating_leg.compute_normalized_cashflows(
                 float_time_idx, model, resolved_requests, regression_monomials, state
             )
-            total_value -= float_cashflow
 
-        return state, fixed_cashflow - float_cashflow
+        total_value = float_cashflow - fixed_cashflow if self.irs_type == IRSType.RECEIVER else fixed_cashflow - float_cashflow
+
+        return state, total_value
 

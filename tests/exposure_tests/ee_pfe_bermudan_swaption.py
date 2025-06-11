@@ -9,7 +9,7 @@ from models.vasicek import *
 from metrics.pfe_metric import *
 from metrics.epe_metric import *
 from products.bermudan_option import BermudanOption, OptionType
-from products.swap import InterestRateSwap
+from products.swap import InterestRateSwap, IRSType
 from engine.engine import *
 
 
@@ -26,7 +26,7 @@ if __name__ == "__main__":
     maturity = 3.0
     strike = 0.0
     
-    underlying = InterestRateSwap(startdate=0.0,enddate=maturity,notional=1.0,fixed_rate=0.03,tenor_fixed=0.25,tenor_float=0.25)
+    underlying = InterestRateSwap(startdate=0.0,enddate=maturity,notional=1.0,fixed_rate=0.03,tenor_fixed=0.25,tenor_float=0.25, irs_type=IRSType.RECEIVER)
     product = BermudanOption(underlying=underlying, exercise_dates=exercise_dates, strike=strike, option_type=OptionType.CALL)
 
     portfolio=[product]
