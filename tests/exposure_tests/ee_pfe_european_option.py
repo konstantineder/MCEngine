@@ -3,6 +3,7 @@ from context import *
 from common.packages import *
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 from controller.controller import SimulationController
 from models.black_scholes import *
 from metrics.pfe_metric import *
@@ -58,4 +59,9 @@ if __name__ == "__main__":
     plt.legend()
     plt.tight_layout()
 
-    plt.show()
+    out_dir = os.path.join("tests", "plots", "exposure_tests")
+    os.makedirs(out_dir, exist_ok=True)
+
+    out_path = os.path.join(out_dir, "exposure_european_equity_option.png")
+    plt.savefig(out_path)
+    print(f"Plot saved to {out_path}")

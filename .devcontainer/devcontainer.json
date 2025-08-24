@@ -1,0 +1,19 @@
+{
+  "name": "MCEngine Dev",
+  "workspaceFolder": "/app",
+  "dockerFile": "../Dockerfile",   // <-- note the ../
+  "context": "..",
+  "remoteEnv": { "PYTHONUNBUFFERED": "1" },
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "python.defaultInterpreterPath": "/usr/local/bin/python"
+  },
+  "extensions": [
+    "ms-python.python",
+    "mechatroner.rainbow-csv"
+  ],
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached"
+  ]
+}
+

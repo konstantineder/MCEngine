@@ -3,6 +3,7 @@ from context import *
 from common.packages import *
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 from controller.controller import SimulationController
 from models.vasicek import VasicekModel
 from metrics.pfe_metric import PFEMetric
@@ -64,4 +65,9 @@ if __name__ == "__main__":
     ax2.legend()
 
     plt.tight_layout()
-    plt.show()
+    out_dir = os.path.join("tests", "plots", "exposure_tests")
+    os.makedirs(out_dir, exist_ok=True)
+
+    out_path = os.path.join(out_dir, "exposure_bonds.png")
+    plt.savefig(out_path)
+    print(f"Plot saved to {out_path}")

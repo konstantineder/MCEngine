@@ -12,3 +12,4 @@ mcengine/
 *.egg-info/
 dist/
 build/
+tests/plots/

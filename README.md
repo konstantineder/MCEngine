@@ -8,11 +8,10 @@ A flexible, extensible Monte Carlo simulation engine for pricing and risk analyt
 
 - **Metrics Calculation**
   - Present Value (**PV**)
-  - Credit Exposure (**CE**)
+  - Current Exposure (**CE**)
   - Expected Exposure (**EE**)
   - Effective Expected Exposure (**EEPE**)
   - Potential Future Exposure (**PFE**)
-  - Expected Loss (**EL**)
   - xVA metrics (e.g., CVA, DVA, FVA – under development)
 
 - **Sensitivity Analysis**

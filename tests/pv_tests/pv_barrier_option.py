@@ -4,6 +4,7 @@ import torch
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 from itertools import product as cartesian_product
 from controller.controller import SimulationController
 from models.black_scholes import BlackScholesModel
@@ -170,7 +171,14 @@ if __name__ == "__main__":
     ax_vega.legend()
 
     plt.tight_layout()
-    plt.show()
+
+    # Build the output directory relative to the repo root
+    out_dir = os.path.join("tests", "plots", "pv_tests")
+    os.makedirs(out_dir, exist_ok=True)
+
+    out_path = os.path.join(out_dir, "pv_barrier_option.png")
+    plt.savefig(out_path)
+    print(f"Plot saved to {out_path}")
 
 
 

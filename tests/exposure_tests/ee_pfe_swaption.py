@@ -3,6 +3,7 @@ from context import *
 from common.packages import *
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 from controller.controller import SimulationController
 from models.vasicek import VasicekModel
 from metrics.pfe_metric import PFEMetric
@@ -60,5 +61,9 @@ if __name__ == "__main__":
     # Optional: Tight layout
     plt.tight_layout()
 
-    # Show the plot
-    plt.show()
+    out_dir = os.path.join("tests", "plots", "exposure_tests")
+    os.makedirs(out_dir, exist_ok=True)
+
+    out_path = os.path.join(out_dir, "exposure_swaption.png")
+    plt.savefig(out_path)
+    print(f"Plot saved to {out_path}")
