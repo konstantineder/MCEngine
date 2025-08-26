@@ -1,0 +1,31 @@
+{
+  "name": "MCEngine Dev (GPU)",
+  "workspaceFolder": "/app",
+  "dockerFile": "../Dockerfile",
+  "context": "..",
+  "build": {
+    "target": "runtime",
+    "args": {
+      "TORCH_CHANNEL": "cu124"
+    }
+  },
+  "runArgs": ["--gpus", "all"],
+  "containerEnv": { "CUDA_DEVICE_ORDER": "PCI_BUS_ID" },
+  "remoteEnv": { "PYTHONUNBUFFERED": "1" },
+  "settings": {
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "python.defaultInterpreterPath": "/usr/local/bin/python",
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": ["tests/pytests"]
+  },
+  "extensions": [
+    "ms-python.python",
+    "mechatroner.rainbow-csv"
+  ],
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/app,type=bind,consistency=cached",
+    "type=bind,source=${env:HOME}/.cache/pip,target=/root/.cache/pip"
+  ],
+  "postCreateCommand": "python -c \"import torch; print('Torch', torch.__version__, '| CUDA', getattr(torch.version,'cuda',None), '| Available', torch.cuda.is_available())\""
+}

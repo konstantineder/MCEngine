@@ -1,13 +1,11 @@
-# Python 3.12 slim image
-FROM python:3.12-slim
-
+# ---- base ----
+FROM python:3.12-slim AS base
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    # Point pip to the cu124 wheels for PyTorch
-    PIP_EXTRA_INDEX_URL=https://download.pytorch.org/whl/cu124
+    PIP_NO_CACHE_DIR=1
+ARG TORCH_CHANNEL=cpu   # "cpu" (default) or "cu124"
 
-# System deps often needed by scientific stacks and matplotlib backends
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential gcc g++ pkg-config \
     libglib2.0-0 libsm6 libxext6 libxrender1 \
@@ -16,12 +14,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-# Copy and install deps first (better layer caching)
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# Use CUDA wheels only when requested
+RUN pip install --upgrade pip && \
+    if [ "$TORCH_CHANNEL" = "cu124" ]; then \
+      PIP_EXTRA_INDEX_URL="https://download.pytorch.org/whl/cu124" \
+      pip install --no-cache-dir -r requirements.txt; \
+    else \
+      pip install --no-cache-dir -r requirements.txt; \
+    fi
 
 COPY . .
 
-# Quick CUDA sanity check at startup (optional)
-CMD ["python", "-c", "import torch; print('Torch:', torch.__version__, '| CUDA:', torch.version.cuda, '| Available:', torch.cuda.is_available())"]
+# ---- test ----
+FROM base AS test
+# Ensure pytest is available (or include it in requirements.txt)
+# RUN pip install --no-cache-dir pytest
+RUN pytest -q tests/pytests
+
+# ---- runtime ----
+FROM base AS runtime
+CMD ["python", "-c", "import torch; print('Torch:', torch.__version__, '| CUDA:', getattr(torch.version,'cuda',None), '| Available:', torch.cuda.is_available())"]
