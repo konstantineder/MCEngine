@@ -1,0 +1,38 @@
+name: CI (build + pytest)
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  test-in-docker:
+    name: Build image and run pytest
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write 
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          tags: myapp:${{ github.sha }}
+          push: false
+          load: true   
+
+      - name: Show CUDA/Torch sanity (optional)
+        run: docker run --rm myapp:${{ github.sha }}
+
+      - name: Run pytest inside the container
+        run: docker run --rm myapp:${{ github.sha }} pytest -q tests/pytests
