@@ -2,5 +2,5 @@ ipython==8.25.0
 matplotlib==3.8.4
 numpy==1.26.4
 pandas==2.2.2
-torch==2.4.0+cu124
+torch==2.4.0
 pytest==8.4.1
