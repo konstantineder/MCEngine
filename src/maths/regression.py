@@ -4,6 +4,9 @@ class RegressionFunction:
     def __init__(self, degree):
         self.degree=degree
 
+    def get_degree(self):
+        return self.degree + 1
+
 class PolyomialRegression(RegressionFunction):
     def __init__(self, degree):
         super().__init__(degree)

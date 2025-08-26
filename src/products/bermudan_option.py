@@ -67,7 +67,7 @@ class BermudanOption(Product):
         else:
             return torch.maximum(self.strike - spots, zero)
     
-    def compute_normalized_cashflows(self, time_idx, model_params, resolved_requests, regression_RegressionFunction, state=[]):
+    def compute_normalized_cashflows(self, time_idx, model_params, resolved_requests, regression_function, state=[]):
         spot = resolved_requests[1][self.underlying_requests[time_idx].get_handle()]
         immediate = self.payoff(spot, model_params)
 
@@ -75,7 +75,7 @@ class BermudanOption(Product):
         if time_idx == len(self.product_timeline) - 1:
             continuation = torch.zeros_like(immediate)
         else:
-            A = regression_RegressionFunction.get_regression_matrix(spot)
+            A = regression_function.get_regression_matrix(spot)
             coeffs_matrix = torch.stack([self.regression_coeffs[time_idx][s] for s in state.tolist()], dim=0)  # [num_paths, 3]
 
             continuation = (A * coeffs_matrix).sum(dim=1)

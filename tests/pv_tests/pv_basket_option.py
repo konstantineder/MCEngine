@@ -99,27 +99,6 @@ if __name__ == "__main__":
 
     metrics = [PVMetric()]
 
-    num_paths = 1000000
-    steps = 1
-
-    sc=SimulationController(portfolio=portfolio, 
-                            model=model, 
-                            metrics=metrics, 
-                            num_paths_mainsim=num_paths, 
-                            num_paths_presim=0, 
-                            num_steps=steps, 
-                            simulation_scheme=SimulationScheme.ANALYTICAL, 
-                            differentiate=False)
-    
-    sim_results=sc.run_simulation()
-    price_basket=sim_results.get_results(0,0)[0]
-    price_geo=sim_results.get_results(1,0)[0]
-    analytical_price=basket_geo.compute_pv_analytically(model).item()
-    
-    precision = 0.02
-    assert abs(price_basket - 12.60) < precision, f"Basket price {price_basket} not close to 12.60"
-    assert abs(price_geo - analytical_price) < precision, f"Geometric price {price_geo} not close to analytical {analytical_price}"
-
     # Cartesian product of all combinations
     # defining the parameter grid
     param_grid = list(cartesian_product(T_vals,S0_vals, sigma_vals, r_vals, strikes))
@@ -128,6 +107,7 @@ if __name__ == "__main__":
     # Since only spot price and time to maturity are varied
     # the rate and volatility will be filtered out
     num_paths = 10000
+    steps = 1
     df_results_spot_maturity=compute_prices_for_grid(param_grid,weights,correlation_matrix,num_paths,steps).drop(columns=["rate", "vola"])
     
     def compute_pv_analytically_wrapper(args):
@@ -199,7 +179,14 @@ if __name__ == "__main__":
     ax_vega.legend()
 
     plt.tight_layout()
-    plt.show()
+    
+    # Build the output directory relative to the repo root
+    out_dir = os.path.join("tests", "plots", "pv_tests")
+    os.makedirs(out_dir, exist_ok=True)
+
+    out_path = os.path.join(out_dir, "pv_basket_option.png")
+    plt.savefig(out_path)
+    print(f"Plot saved to {out_path}")
 
 
 

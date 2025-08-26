@@ -21,7 +21,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy your project (if any)
 COPY . .
 
 # Quick CUDA sanity check at startup (optional)

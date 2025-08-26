@@ -57,5 +57,9 @@ if __name__ == "__main__":
     plt.grid(True, linestyle='--', alpha=0.7)
     plt.legend()
     plt.tight_layout()
+    out_dir = os.path.join("tests", "plots", "exposure_tests")
+    os.makedirs(out_dir, exist_ok=True)
 
-    plt.show()
+    out_path = os.path.join(out_dir, "exposure_american_equity_option.png")
+    plt.savefig(out_path)
+    print(f"Plot saved to {out_path}")

@@ -56,13 +56,13 @@ class SimulationController:
                  simulation_scheme   : SimulationScheme,       # Set Simulation Scheme: Schemes currently provided: Analytical, Euler, Milstein
                  differentiate       : bool = False,           # Turn differentiation on or off
                  exposure_timeline   : Union[List[float], np.ndarray, None] = None,     # Set timeline for exposure simulation
-                 regression_RegressionFunction: Optional[PolyomialRegression] = None):  # Set regression function used for LSM algorithm
+                 regression_function: Optional[PolyomialRegression] = None):  # Set regression function used for LSM algorithm
         
         if exposure_timeline is None:
             exposure_timeline = []
         
-        if regression_RegressionFunction is None:
-            regression_RegressionFunction = PolyomialRegression(degree=2)
+        if regression_function is None:
+            regression_function = PolyomialRegression(degree=2)
 
         self.portfolio = portfolio
         self.model = model
@@ -73,7 +73,7 @@ class SimulationController:
         self.simulation_scheme = simulation_scheme
         self.differentiate = differentiate
         self.exposure_timeline = torch.tensor(exposure_timeline, dtype=torch.float64)
-        self.regression_RegressionFunction=regression_RegressionFunction
+        self.regression_function=regression_function
         self.requires_higher_order_derivatives=False
 
         # Label products in portfolio
@@ -92,7 +92,7 @@ class SimulationController:
         # for each product and exposure timepoint
         self.regression_coeffs = [
             [  
-                [torch.zeros(3, device=device) for _ in range(prod.get_num_states())]
+                [torch.zeros(self.regression_function.get_degree(), device=device) for _ in range(prod.get_num_states())]
                 for _ in self.exposure_timeline
             ]
             for prod in portfolio
@@ -196,7 +196,7 @@ class SimulationController:
                     total_cfs[:, 0] = cf_cache[last_cf_index_computed][:, 0]
                     for idx in range(t_next_idx, last_cf_index_computed):
                         _, cfs = product.compute_normalized_cashflows(
-                            idx, self.model, resolved_requests, self.regression_RegressionFunction
+                            idx, self.model, resolved_requests, self.regression_function
                         )
                         total_cfs[:, 0] += cfs
 
@@ -207,7 +207,7 @@ class SimulationController:
                         current_state = torch.full((num_paths,), state, dtype=torch.long, device=device)
                         for idx in range(t_next_idx, len(product.product_timeline)):
                             current_state, cfs = product.compute_normalized_cashflows(
-                                idx, self.model, resolved_requests, self.regression_RegressionFunction, current_state
+                                idx, self.model, resolved_requests, self.regression_function, current_state
                             )
                             total_cfs[:, state] += cfs
 
@@ -228,7 +228,7 @@ class SimulationController:
 
             normalized_cfs = numeraire.unsqueeze(1) * total_cfs
 
-            A = self.regression_RegressionFunction.get_regression_matrix(explanatory)
+            A = self.regression_function.get_regression_matrix(explanatory)
 
             for s in range(num_states):
                 Y = normalized_cfs[:, s]
@@ -253,20 +253,20 @@ class SimulationController:
 
         if len(self.exposure_timeline)==0 and any_pv:
             while t_start < len(product.product_timeline):
-                    prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model, resolved_requests, self.regression_RegressionFunction, prod_state)
+                    prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model, resolved_requests, self.regression_function, prod_state)
                     cfs+=new_cfs
                     t_start+=1
 
         else:
             for i, t in enumerate(self.exposure_timeline):
                 while t_start < len(product.product_timeline) and product.product_timeline[t_start] <= t:
-                    prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model, resolved_requests, self.regression_RegressionFunction,prod_state)
+                    prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model, resolved_requests, self.regression_function,prod_state)
                     cfs+=new_cfs
                     t_start+=1
 
                 explanatory=resolved_requests[0][self.spot_requests[i].handle]
                 # Compute continuation value: A @ coeffs_per_path
-                A = self.regression_RegressionFunction.get_regression_matrix(explanatory)
+                A = self.regression_function.get_regression_matrix(explanatory)
 
                 coeffs_matrix = torch.stack([
                     self.regression_coeffs[product.product_id][i][s] for s in prod_state
@@ -278,7 +278,7 @@ class SimulationController:
 
                 if any_pv:
                     while t_start < len(product.product_timeline):
-                        prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model, resolved_requests, self.regression_RegressionFunction, prod_state)
+                        prod_state, new_cfs=product.compute_normalized_cashflows(t_start, self.model, resolved_requests, self.regression_function, prod_state)
                         cfs+=new_cfs
                         t_start+=1
 
