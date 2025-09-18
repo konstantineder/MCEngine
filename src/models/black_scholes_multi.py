@@ -17,11 +17,11 @@ class BlackScholesMulti(Model):
         # Collect all model parameters in common PyTorch tensor
         # If AAD is enabled the respective adjoints are accumulated
         self.model_params = [
-            torch.tensor(param, dtype=torch.float64, device=device)
+            torch.tensor(param, dtype=FLOAT, device=device)
             for param in list(spots) + list(volatilities) + list([rate])
         ]
 
-        self.correlation_matrix = torch.tensor(correlation_matrix, dtype=torch.float64, device=device)
+        self.correlation_matrix = torch.tensor(correlation_matrix, dtype=FLOAT, device=device)
         self.num_assets=len(spots)
 
         # Store computed Cholesky matrix for each time delta
@@ -72,7 +72,7 @@ class BlackScholesMulti(Model):
             cholesky = self.compute_cholesky(dt)
 
             for _ in range(num_steps):
-                z = torch.randn(num_paths, num_assets, dtype=torch.float64, device=device)
+                z = torch.randn(num_paths, num_assets, dtype=FLOAT, device=device)
                 correlated_z = z @ cholesky.T
                 L_squared = cholesky.pow(2)
                 drift = (rate - 0.5 * L_squared.sum(dim=1)) * dt
@@ -99,7 +99,7 @@ class BlackScholesMulti(Model):
             cholesky = self.compute_cholesky(dt)
 
             for _ in range(num_steps):
-                z = torch.randn(num_paths, num_assets, dtype=torch.float64, device=device)
+                z = torch.randn(num_paths, num_assets, dtype=FLOAT, device=device)
                 correlated_z = z @ cholesky.T
                 dS = rate * spot * dt + spot * correlated_z * torch.sqrt(dt)
                 spot = spot + dS

@@ -14,7 +14,7 @@ class BlackScholesModel(Model):
         # Collect all model parameters in common PyTorch tensor
         # If AAD is enabled the respective adjoints are accumulated
         self.model_params = [
-            torch.tensor(param, dtype=torch.float64, device=device)
+            torch.tensor(param, dtype=FLOAT, device=device)
             for param in list([spot]) + list([sigma]) + list([rate])
         ]
 
@@ -44,7 +44,7 @@ class BlackScholesModel(Model):
             dt = dt_total / num_steps
 
             for _ in range(num_steps):
-                z = torch.randn(num_paths, dtype=torch.float64, device=device)
+                z = torch.randn(num_paths, dtype=FLOAT, device=device)
                 drift=rate*dt
                 diffusion=sigma*torch.sqrt(dt)*z-0.5*dt*sigma**2
                 spot = spot*torch.exp(drift+diffusion)

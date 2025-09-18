@@ -1,6 +1,6 @@
 from context import *
 
-import torch
+from common.packages import *
 import numpy as np
 import pandas as pd
 from IPython.display import display
@@ -15,7 +15,6 @@ from engine.engine import SimulationScheme
 
 if __name__ == "__main__":
     # # --- GPU device setup ---
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
     # Numerical Differentiation

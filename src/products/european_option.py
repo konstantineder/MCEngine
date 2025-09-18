@@ -20,12 +20,12 @@ class EuropeanOption(Product):
                  ):
         
         super().__init__()
-        self.exercise_date = torch.tensor([exercise_date], dtype=torch.float64,device=device)
-        self.strike = torch.tensor([strike], dtype=torch.float64,device=device)
+        self.exercise_date = torch.tensor([exercise_date], dtype=FLOAT,device=device)
+        self.strike = torch.tensor([strike], dtype=FLOAT,device=device)
         self.option_type = option_type
-        self.product_timeline=torch.tensor([exercise_date], dtype=torch.float64,device=device)
+        self.product_timeline=torch.tensor([exercise_date], dtype=FLOAT,device=device)
         self.modeling_timeline=self.product_timeline
-        self.regression_timeline=torch.tensor([], dtype=torch.float64,device=device)
+        self.regression_timeline=torch.tensor([], dtype=FLOAT,device=device)
         self.underlying=underlying
 
         self.numeraire_requests={0: AtomicRequest(AtomicRequestType.NUMERAIRE,exercise_date)}
@@ -50,7 +50,7 @@ class EuropeanOption(Product):
                model: Model
                ):
         
-        zero = torch.tensor([0.0], dtype=torch.float64, device=device)
+        zero = torch.tensor([0.0], dtype=FLOAT, device=device)
         if self.option_type == OptionType.CALL:
             return torch.maximum(spots - self.strike, zero)
         else:

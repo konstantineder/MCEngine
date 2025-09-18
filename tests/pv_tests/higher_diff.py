@@ -65,11 +65,11 @@ if __name__ == "__main__":
         for T, S0, sigma, rate, strike in param_grid:
 
 
-            spot = torch.tensor([S0], dtype=torch.float64, requires_grad=True, device=device)
-            Trate = torch.tensor([rate], dtype=torch.float64, requires_grad=True, device=device)
-            Tsigma =torch.tensor([sigma], dtype=torch.float64, requires_grad=True, device=device)
-            time = torch.tensor(T, dtype=torch.float64, device=device)
-            Tstrike = torch.tensor(strike, dtype=torch.float64, device=device)
+            spot = torch.tensor([S0], dtype=FLOAT, requires_grad=True, device=device)
+            Trate = torch.tensor([rate], dtype=FLOAT, requires_grad=True, device=device)
+            Tsigma =torch.tensor([sigma], dtype=FLOAT, requires_grad=True, device=device)
+            time = torch.tensor(T, dtype=FLOAT, device=device)
+            Tstrike = torch.tensor(strike, dtype=FLOAT, device=device)
 
             d1 = (torch.log(spot / Tstrike) + (Trate + 0.5 * Tsigma ** 2) * time) / (Tsigma * torch.sqrt(time))
             d2 = d1 - Tsigma * torch.sqrt(time)

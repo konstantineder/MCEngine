@@ -20,9 +20,9 @@ class Product:
         self.product_id=product_id
         self.numeraire_requests=[]
         self.spot_requests=[]
-        self.product_timeline=torch.tensor([], dtype=torch.float64, device=device)
-        self.modeling_timeline = torch.tensor([], dtype=torch.float64, device=device)
-        self.regression_timeline = torch.tensor([], dtype=torch.float64, device=device)
+        self.product_timeline=torch.tensor([], dtype=FLOAT, device=device)
+        self.modeling_timeline = torch.tensor([], dtype=FLOAT, device=device)
+        self.regression_timeline = torch.tensor([], dtype=FLOAT, device=device)
 
         self.regression_coeffs = []
 

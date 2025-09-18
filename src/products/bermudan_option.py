@@ -15,9 +15,9 @@ class BermudanOption(Product):
                  ):
         
         super().__init__()
-        self.strike = torch.tensor([strike], dtype=torch.float64, device=device)
+        self.strike = torch.tensor([strike], dtype=FLOAT, device=device)
         self.option_type = option_type
-        self.product_timeline = torch.tensor(exercise_dates, dtype=torch.float64, device=device)
+        self.product_timeline = torch.tensor(exercise_dates, dtype=FLOAT, device=device)
         self.modeling_timeline = self.product_timeline
         self.regression_timeline = self.product_timeline
         self.regression_coeffs = [

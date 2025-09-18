@@ -17,10 +17,10 @@ class Bond(Product):
                  ):
         
         super().__init__()
-        self.startdate = torch.tensor([startdate], dtype=torch.float64,device=device)
-        self.maturity = torch.tensor([maturity], dtype=torch.float64,device=device)
-        self.notional = torch.tensor([notional], dtype=torch.float64, device=device)
-        self.tenor = torch.tensor([tenor], dtype=torch.float64, device=device)
+        self.startdate = torch.tensor([startdate], dtype=FLOAT,device=device)
+        self.maturity = torch.tensor([maturity], dtype=FLOAT,device=device)
+        self.notional = torch.tensor([notional], dtype=FLOAT, device=device)
+        self.tenor = torch.tensor([tenor], dtype=FLOAT, device=device)
         self.fixed_rate = fixed_rate
         self.pays_notional=pays_notional
         self.composite_req_handle=None
@@ -62,10 +62,10 @@ class Bond(Product):
             self.underlying_requests[idx + 1] = AtomicRequest(request_type=AtomicRequestType.FORWARD_RATE,time1=startdate,time2=maturity)
             self.payment_dates.append(maturity)
 
-        self.payment_dates = torch.tensor(self.payment_dates, dtype=torch.float64, device=device)
+        self.payment_dates = torch.tensor(self.payment_dates, dtype=FLOAT, device=device)
         self.product_timeline = self.payment_dates
         self.modeling_timeline = self.payment_dates
-        self.regression_timeline = torch.tensor([], dtype=torch.float64, device=device)
+        self.regression_timeline = torch.tensor([], dtype=FLOAT, device=device)
 
     def __eq__(self, other):
         return (
@@ -117,7 +117,7 @@ class Bond(Product):
             return self.get_value_float(resolved_atomic_requests)
 
     def get_value_fixed(self, resolved_atomic_requests):
-        total_cashflow = torch.zeros_like(resolved_atomic_requests[0], dtype=torch.float64, device=device)
+        total_cashflow = torch.zeros_like(resolved_atomic_requests[0], dtype=FLOAT, device=device)
 
         prev_time=self.startdate
         for t in self.numeraire_requests.keys():
@@ -140,7 +140,7 @@ class Bond(Product):
         return total_cashflow
     
     def get_value_float(self, resolved_atomic_requests):
-        total_cashflow = torch.zeros_like(resolved_atomic_requests[0], dtype=torch.float64, device=device)
+        total_cashflow = torch.zeros_like(resolved_atomic_requests[0], dtype=FLOAT, device=device)
 
         for t in self.numeraire_requests.keys():
             discount_req = self.underlying_requests[t]

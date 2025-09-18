@@ -16,7 +16,7 @@ class VasicekModel(Model):
         # Collect all model parameters in common PyTorch tensor
         # If AAD is enabled the respective adjoints are accumulated
         self.model_params = [
-            torch.tensor(param, dtype=torch.float64, device=device)
+            torch.tensor(param, dtype=FLOAT, device=device)
             for param in list([rate]) + list([volatility]) + list([mean]) + list([mean_reversion_speed])
         ]
 
@@ -40,7 +40,7 @@ class VasicekModel(Model):
         a=self.get_mean_reversion_speed()
         theta=self.get_mean()
         sigma=self.get_volatility()
-        log_B_t = torch.full((num_paths,), 0., dtype=torch.float64, device=device)
+        log_B_t = torch.full((num_paths,), 0., dtype=FLOAT, device=device)
         paths = []
 
         t_start=self.calibration_date
@@ -56,7 +56,7 @@ class VasicekModel(Model):
                 mean = r_t * exp_decay + theta*(1-exp_decay)
                 variance = (sigma ** 2 / (2 * a)) * (1 - exp_decay ** 2)
 
-                noise = torch.randn(num_paths, device=device, dtype=torch.float64)
+                noise = torch.randn(num_paths, device=device, dtype=FLOAT)
                 r_t = mean + torch.sqrt(variance) * noise
 
             # Each time point: [num_paths, 2]
@@ -75,7 +75,7 @@ class VasicekModel(Model):
         a=self.get_mean_reversion_speed()
         theta=self.get_mean()
         sigma=self.get_volatility()
-        log_B_t = torch.full((num_paths,), 0., dtype=torch.float64, device=device)
+        log_B_t = torch.full((num_paths,), 0., dtype=FLOAT, device=device)
         paths = []
 
         t_start=self.calibration_date
@@ -88,7 +88,7 @@ class VasicekModel(Model):
             for _ in range(num_steps):
                 log_B_t+=r_t*dt
                 drift = a*(theta - r_t)*dt
-                z = torch.randn(num_paths, device=device, dtype=torch.float64)
+                z = torch.randn(num_paths, device=device, dtype=FLOAT)
                 diffusion = sigma * torch.sqrt(dt) * z
 
                 r_t += drift + diffusion
