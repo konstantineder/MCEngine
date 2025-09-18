@@ -36,10 +36,10 @@ class InterestRateSwap(Product):
         fixed_times = {float(t.item()) for t in self.fixed_leg.modeling_timeline}
         float_times = {float(t.item()) for t in self.floating_leg.modeling_timeline}
         all_times = sorted(fixed_times.union(float_times))
-        self.product_timeline = torch.tensor(all_times, dtype=torch.float64)
+        self.product_timeline = torch.tensor(all_times, dtype=FLOAT)
         self.modeling_timeline = self.product_timeline
 
-        self.regression_timeline = torch.tensor([], dtype=torch.float64, device=device)
+        self.regression_timeline = torch.tensor([], dtype=FLOAT, device=device)
 
     def __eq__(self, other):
         return (
@@ -119,7 +119,7 @@ class InterestRateSwap(Product):
             state: Optional[torch.Tensor] = None
         ) -> tuple[Optional[torch.Tensor], torch.Tensor]:
         
-        total_value = torch.zeros_like(resolved_requests[0][0], dtype=torch.float64, device=device)
+        total_value = torch.zeros_like(resolved_requests[0][0], dtype=FLOAT, device=device)
 
         time = self.modeling_timeline[time_idx]
 

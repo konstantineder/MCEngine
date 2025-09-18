@@ -82,7 +82,7 @@ for episode in range(num_episodes):
 
     for idx, t in enumerate(exercise_dates):
         S_t = S_path[idx]
-        state = torch.tensor([idx, S_t / K], dtype=torch.float32).to(device)
+        state = torch.tensor([idx, S_t / K], dtype=FLOAT).to(device)
         action = select_action(q_net, state.unsqueeze(0), epsilon)
 
         is_last = idx == len(exercise_dates) - 1
@@ -100,7 +100,7 @@ for episode in range(num_episodes):
         else:  # Hold and continue
             reward = 0
             S_next = S_path[idx + 1]
-            next_state = torch.tensor([idx + 1, S_next / K], dtype=torch.float32).to(device)
+            next_state = torch.tensor([idx + 1, S_next / K], dtype=FLOAT).to(device)
             done = False
 
         replay_buffer.append((state, action, reward, next_state, done))
@@ -115,7 +115,7 @@ for episode in range(num_episodes):
 
         states_tensor = torch.stack(states)
         actions_tensor = torch.tensor(actions, dtype=torch.int64).unsqueeze(1).to(device)
-        rewards_tensor = torch.tensor(rewards, dtype=torch.float32).unsqueeze(1).to(device)
+        rewards_tensor = torch.tensor(rewards, dtype=FLOAT).unsqueeze(1).to(device)
 
         next_q_values = torch.zeros(batch_size, 1).to(device)
         
@@ -155,7 +155,7 @@ def compute_present_value(q_net, num_paths=100000):
 
             for idx, t in enumerate(exercise_dates):
                 S_t = S_path[idx]
-                state = torch.tensor([idx, S_t / K], dtype=torch.float32).unsqueeze(0).to(device)
+                state = torch.tensor([idx, S_t / K], dtype=FLOAT).unsqueeze(0).to(device)
                 q_values = q_net(state)
                 action = q_values.argmax().item()
 

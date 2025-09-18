@@ -72,7 +72,7 @@ class SimulationController:
         self.num_steps = num_steps
         self.simulation_scheme = simulation_scheme
         self.differentiate = differentiate
-        self.exposure_timeline = torch.tensor(exposure_timeline, dtype=torch.float64)
+        self.exposure_timeline = torch.tensor(exposure_timeline, dtype=FLOAT, device=device)
         self.regression_function=regression_function
         self.requires_higher_order_derivatives=False
 
@@ -108,7 +108,7 @@ class SimulationController:
         prod_times = {float(t.item()) for prod in self.portfolio for t in prod.modeling_timeline}
         exposure_times = {t for t in exposure_timeline}
         all_times = sorted(prod_times.union(exposure_times))
-        self.simulation_timeline = torch.tensor(all_times, dtype=torch.float64)
+        self.simulation_timeline = torch.tensor(all_times, dtype=FLOAT, device=device)
 
         # Decide whether regression is required
         # If no product in the portfolio needs to be constructed and
@@ -166,7 +166,7 @@ class SimulationController:
     def _perform_regression_for_product(self, product : Product, resolved_requests : List[dict]):
 
         regression_timeline = set(product.regression_timeline.tolist()).union(self.exposure_timeline.tolist())
-        regression_timeline = torch.tensor(sorted(regression_timeline), dtype=torch.float64)
+        regression_timeline = torch.tensor(sorted(regression_timeline), dtype=FLOAT, device=device)
 
         product_timeline = product.product_timeline
         product_regression_timeline = product.regression_timeline
@@ -232,7 +232,7 @@ class SimulationController:
 
             for s in range(num_states):
                 Y = normalized_cfs[:, s]
-                coeffs = torch.linalg.lstsq(A, Y.unsqueeze(1)).solution.squeeze()
+                coeffs = (torch.linalg.pinv(A) @ Y.unsqueeze(-1)).squeeze(-1)
                 
                 if t_reg in product_regression_timeline:
                     product_reg_idx = torch.searchsorted(product_regression_timeline, t_reg)
@@ -247,7 +247,7 @@ class SimulationController:
         num_paths=self.num_paths_mainsim
         exposures=[]
         t_start=0
-        cfs = torch.zeros(num_paths, dtype=torch.float64, device=device)
+        cfs = torch.zeros(num_paths, dtype=FLOAT, device=device)
 
         any_pv=any(m.metric_type==MetricType.PV for m in self.metrics)
 

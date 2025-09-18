@@ -26,17 +26,17 @@ class BarrierOption(Product):
                  barrier_option_type2       : Optional[BarrierOptionType] = None): # Type of second barrier
         
         super().__init__()
-        self.strike = torch.tensor([strike], dtype=torch.float64,device=device)
-        self.maturity=torch.tensor([maturity], dtype=torch.float64,device=device)
-        self.product_timeline=torch.tensor([maturity], dtype=torch.float64,device=device)
-        self.modeling_timeline=torch.linspace(startdate, maturity,num_observation_timepoints, dtype=torch.float64,device=device)
-        self.regression_timeline=torch.tensor([], dtype=torch.float64,device=device)
-        self.barrier1 = torch.tensor([barrier1], dtype=torch.float64,device=device)
+        self.strike = torch.tensor([strike], dtype=FLOAT,device=device)
+        self.maturity=torch.tensor([maturity], dtype=FLOAT,device=device)
+        self.product_timeline=torch.tensor([maturity], dtype=FLOAT,device=device)
+        self.modeling_timeline=torch.linspace(startdate, maturity,num_observation_timepoints, dtype=FLOAT,device=device)
+        self.regression_timeline=torch.tensor([], dtype=FLOAT,device=device)
+        self.barrier1 = torch.tensor([barrier1], dtype=FLOAT,device=device)
         self.barrier_option_type1 = barrier_option_type1
         
         self.barrier2 = barrier2
         if barrier2 is not None:
-            self.barrier2 = torch.tensor([barrier2], dtype=torch.float64,device=device) 
+            self.barrier2 = torch.tensor([barrier2], dtype=FLOAT,device=device) 
         self.barrier_option_type2 = barrier_option_type2
 
         self.option_type = option_type

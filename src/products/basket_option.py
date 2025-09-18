@@ -19,13 +19,13 @@ class BasketOption(Product):
                  use_variation_reduction: Optional[bool]=False):
         
         super().__init__()
-        self.maturity = torch.tensor([maturity], dtype=torch.float64,device=device)
-        self.strike = torch.tensor([strike], dtype=torch.float64,device=device)
-        self.weights=torch.tensor(weights, dtype=torch.float64,device=device)
+        self.maturity = torch.tensor([maturity], dtype=FLOAT,device=device)
+        self.strike = torch.tensor([strike], dtype=FLOAT,device=device)
+        self.weights=torch.tensor(weights, dtype=FLOAT,device=device)
         self.option_type = option_type
-        self.product_timeline=torch.tensor([maturity], dtype=torch.float64,device=device)
+        self.product_timeline=torch.tensor([maturity], dtype=FLOAT,device=device)
         self.modeling_timeline=self.product_timeline
-        self.regression_timeline=torch.tensor([], dtype=torch.float64,device=device)
+        self.regression_timeline=torch.tensor([], dtype=FLOAT,device=device)
         self.basket_option_type=basket_option_type
         self.use_variation_reduction=use_variation_reduction
 
@@ -50,7 +50,7 @@ class BasketOption(Product):
 
     def compute_payoff(self, spots, basket_option_type):
             # spots: shape [num_paths, num_assets]
-            zero = torch.tensor(0.0, dtype=torch.float64, device=device)
+            zero = torch.tensor(0.0, dtype=FLOAT, device=device)
             weights = self.weights
 
             if basket_option_type == BasketOptionType.ARITHMETIC:

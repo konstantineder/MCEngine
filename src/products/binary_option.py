@@ -13,13 +13,13 @@ class BinaryOption(Product):
                  ):
         
         super().__init__()
-        self.maturity = torch.tensor([maturity], dtype=torch.float64,device=device)
-        self.strike = torch.tensor([strike], dtype=torch.float64,device=device)
+        self.maturity = torch.tensor([maturity], dtype=FLOAT,device=device)
+        self.strike = torch.tensor([strike], dtype=FLOAT,device=device)
         self.option_type = option_type
-        self.payment_amount = torch.tensor([payment_amount], dtype=torch.float64,device=device)
-        self.product_timeline=torch.tensor([maturity], dtype=torch.float64,device=device)
+        self.payment_amount = torch.tensor([payment_amount], dtype=FLOAT,device=device)
+        self.product_timeline=torch.tensor([maturity], dtype=FLOAT,device=device)
         self.modeling_timeline=self.product_timeline
-        self.regression_timeline=torch.tensor([], dtype=torch.float64,device=device)
+        self.regression_timeline=torch.tensor([], dtype=FLOAT,device=device)
 
         self.numeraire_requests={0: AtomicRequest(AtomicRequestType.NUMERAIRE,maturity)}
         self.spot_requests={0: AtomicRequest(AtomicRequestType.SPOT)}

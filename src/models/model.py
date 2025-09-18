@@ -6,7 +6,7 @@ class Model:
                  calibration_date : float # Calibration date of the model
                  ):
         
-        self.calibration_date = torch.tensor([calibration_date], dtype=torch.float64,device=device)
+        self.calibration_date = torch.tensor([calibration_date], dtype=FLOAT,device=device)
         self.model_params=[]
         self.num_assets=1
     

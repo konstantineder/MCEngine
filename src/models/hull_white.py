@@ -17,14 +17,14 @@ class HullWhiteModel(Model):
         super().__init__(calibration_date)
 
         # Model parameters
-        self.rate = torch.tensor(rate, dtype=torch.float64, device=device)
-        self.sigma = torch.tensor(volatility, dtype=torch.float64, device=device)
-        self.mean_reversion = torch.tensor(mean_reversion, dtype=torch.float64, device=device)
+        self.rate = torch.tensor(rate, dtype=FLOAT, device=device)
+        self.sigma = torch.tensor(volatility, dtype=FLOAT, device=device)
+        self.mean_reversion = torch.tensor(mean_reversion, dtype=FLOAT, device=device)
 
         # Forward curve and its derivative are assumed given as values at discrete times
         self.curve_times = torch.linspace(0, 1, steps=len(initial_forward_curve)).to(device)  
-        self.forward_curve = torch.tensor(initial_forward_curve, dtype=torch.float64, device=device)
-        self.forward_curve_derivative = torch.tensor(forward_curve_derivative, dtype=torch.float64, device=device)
+        self.forward_curve = torch.tensor(initial_forward_curve, dtype=FLOAT, device=device)
+        self.forward_curve_derivative = torch.tensor(forward_curve_derivative, dtype=FLOAT, device=device)
 
         # Collect all model parameters in common PyTorch tensor
         # If AAD is enabled the respective adjoints are accumulated
@@ -73,7 +73,7 @@ class HullWhiteModel(Model):
                 mean = r_t * exp_decay + theta_t * (1 - exp_decay) / self.mean_reversion
                 variance = (self.sigma ** 2 / (2 * self.mean_reversion)) * (1 - exp_decay ** 2)
 
-                noise = torch.randn(num_paths, device=device, dtype=torch.float64)
+                noise = torch.randn(num_paths, device=device, dtype=FLOAT)
                 r_t = mean + torch.sqrt(variance) * noise
                 log_B_t += r_t * dt
 
@@ -95,7 +95,7 @@ class HullWhiteModel(Model):
 
             for step in range(num_steps):
                 t = t_start + step * dt
-                dW = torch.randn(num_paths, device=device, dtype=torch.float64) * torch.sqrt(dt)
+                dW = torch.randn(num_paths, device=device, dtype=FLOAT) * torch.sqrt(dt)
                 theta_t = self.compute_theta(t)
 
                 dr = (theta_t - self.mean_reversion * r_t) * dt + self.sigma * dW
